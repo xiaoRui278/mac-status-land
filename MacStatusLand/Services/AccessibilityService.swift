@@ -33,13 +33,13 @@ class AccessibilityService {
         
         var menuBarRef: CFTypeRef?
         guard AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef) == .success,
-              let menuBar = menuBarRef as? AXUIElement else {
+              let menuBar = menuBarRef else {
             print("Could not get menu bar")
             return []
         }
         
         var childrenRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(menuBar, kAXChildrenAttribute as CFString, &childrenRef) == .success,
+        guard AXUIElementCopyAttributeValue(menuBar as! AXUIElement, kAXChildrenAttribute as CFString, &childrenRef) == .success,
               let children = childrenRef as? [AXUIElement] else {
             print("Could not get menu bar children")
             return []
