@@ -57,22 +57,20 @@ class AccessibilityService {
     }
     
     static func getElementPosition(_ element: AXUIElement) -> CGPoint? {
-        guard let positionRef = getElementAttribute(element, attribute: kAXPositionAttribute),
-              let positionValue = positionRef else { return nil }
+        guard let positionRef = getElementAttribute(element, attribute: kAXPositionAttribute) else { return nil }
         
         var point = CGPoint.zero
-        if AXValueGetValue(positionValue as! AXValue, .cgPoint, &point) {
+        if AXValueGetValue(positionRef as! AXValue, .cgPoint, &point) {
             return point
         }
         return nil
     }
     
     static func getElementSize(_ element: AXUIElement) -> CGSize? {
-        guard let sizeRef = getElementAttribute(element, attribute: kAXSizeAttribute),
-              let sizeValue = sizeRef else { return nil }
+        guard let sizeRef = getElementAttribute(element, attribute: kAXSizeAttribute) else { return nil }
         
         var size = CGSize.zero
-        if AXValueGetValue(sizeValue as! AXValue, .cgSize, &size) {
+        if AXValueGetValue(sizeRef as! AXValue, .cgSize, &size) {
             return size
         }
         return nil
