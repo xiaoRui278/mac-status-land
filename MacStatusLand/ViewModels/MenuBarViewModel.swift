@@ -48,6 +48,10 @@ class MenuBarViewModel: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.discoveredApps = self.discoveryService.discoverMenuBarApps()
+            print("Discovered \(self.discoveredApps.count) apps:")
+            for app in self.discoveredApps {
+                print("  - \(app.displayName) (\(app.bundleIdentifier))")
+            }
             self.isLoading = false
         }
     }
