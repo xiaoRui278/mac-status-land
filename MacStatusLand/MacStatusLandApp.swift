@@ -13,6 +13,20 @@ struct MacStatusLandApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarController: StatusBarController?
+    
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        statusBarController = StatusBarController()
+    }
+    
+    func applicationWillTerminate(_ notification: Notification) {
+        statusBarController?.showAllIcons()
+    }
+}
+    }
+}
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+    var statusBarController: StatusBarController?
     var permissionWindow: NSWindow?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
