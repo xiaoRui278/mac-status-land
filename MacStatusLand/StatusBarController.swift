@@ -16,11 +16,14 @@ class StatusBarController: NSObject {
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-
+        
         if let button = statusItem?.button {
             button.image = NSImage(systemSymbolName: "sidebar.right", accessibilityDescription: "Mac Status Land")
             button.action = #selector(togglePopover)
             button.target = self
+            print("Status bar button created successfully")
+        } else {
+            print("ERROR: Failed to create status bar button")
         }
 
         let menu = NSMenu()

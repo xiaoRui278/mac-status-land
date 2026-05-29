@@ -16,7 +16,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var permissionWindow: NSWindow?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if AccessibilityService.checkAccessibility(prompt: false) {
+        print("Application did finish launching")
+        let hasAccess = AccessibilityService.checkAccessibility(prompt: false)
+        print("Accessibility permission: \(hasAccess)")
+        
+        if hasAccess {
             statusBarController = StatusBarController()
         } else {
             showPermissionWindow()
