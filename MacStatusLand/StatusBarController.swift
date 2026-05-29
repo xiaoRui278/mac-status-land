@@ -21,20 +21,11 @@ class StatusBarController: NSObject {
             button.title = ">>"
             button.action = #selector(togglePopover)
             button.target = self
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             print("Status bar button created successfully")
         } else {
             print("ERROR: Failed to create status bar button")
         }
-
-        let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "设置", action: #selector(openSettings), keyEquivalent: ","))
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "显示所有图标", action: #selector(showAllIcons), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "刷新", action: #selector(refreshIcons), keyEquivalent: "r"))
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
-
-        statusItem?.menu = menu
     }
 
     private func setupPopover() {
@@ -54,14 +45,33 @@ class StatusBarController: NSObject {
     }
 
     @objc func togglePopover() {
-        guard let button = statusItem?.button else { return }
-
-        if popover?.isShown == true {
-            popover?.performClose(nil)
+        guard let button = statusItem?.button,
+              let event = NSApp.currentEvent else { return }
+        
+        if event.type == .rightMouseUp {
+            showContextMenu()
         } else {
-            viewModel.captureScreenshots()
-            popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            if popover?.isShown == true {
+                popover?.performClose(nil)
+            } else {
+                viewModel.captureScreenshots()
+                popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            }
         }
+    }
+    
+    private func showContextMenu() {
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "设置", action: #selector(openSettings), keyEquivalent: ","))
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "显示所有图标", action: #selector(showAllIcons), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "刷新", action: #selector(refreshIcons), keyEquivalent: "r"))
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
+        
+        statusItem?.menu = menu
+        statusItem?.button?.performClick(nil)
+        statusItem?.menu = nil
     }
 
     @objc func openSettings() {
