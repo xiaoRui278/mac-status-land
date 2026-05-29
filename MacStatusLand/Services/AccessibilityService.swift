@@ -28,16 +28,25 @@ class AccessibilityService {
     static func getStatusBarItems() -> [AXUIElement] {
         print("Looking for SystemUIServer...")
         
-        guard let systemUIServer = NSWorkspace.shared.runningApplications.first(where: {
+        var systemUIServerPID: pid_t = 0
+        
+        if let app = NSWorkspace.shared.runningApplications.first(where: {
             $0.bundleIdentifier == "com.apple.SystemUIServer"
-        }) else {
+        }) {
+            systemUIServerPID = app.processIdentifier
+        } else if let app = NSWorkspace.shared.runningApplications.first(where: {
+            $0.localizedName == "SystemUIServer"
+        }) {
+            systemUIServerPID = app.processIdentifier
+        }
+        
+        guard systemUIServerPID > 0 else {
             print("Could not find SystemUIServer")
             return []
         }
         
-        let pid = systemUIServer.processIdentifier
-        print("Found SystemUIServer: \(pid)")
-        let appElement = AXUIElementCreateApplication(pid)
+        print("Found SystemUIServer: \(systemUIServerPID)")
+        let appElement = AXUIElementCreateApplication(systemUIServerPID)
         
         var menuBarRef: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef)
