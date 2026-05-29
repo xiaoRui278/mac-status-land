@@ -4,14 +4,11 @@ import SwiftUI
 class StatusBarController: NSObject {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
-    private var settingsWindow: NSWindow?
-    private let viewModel = MenuBarViewModel()
 
     override init() {
         super.init()
         setupStatusItem()
         setupPopover()
-        viewModel.initialize()
     }
 
     private func setupStatusItem() {
@@ -22,22 +19,16 @@ class StatusBarController: NSObject {
             button.action = #selector(togglePopover)
             button.target = self
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-            print("Status bar button created successfully")
-        } else {
-            print("ERROR: Failed to create status bar button")
         }
     }
 
     private func setupPopover() {
         let popover = NSPopover()
-        popover.contentSize = NSSize(width: 300, height: 400)
+        popover.contentSize = NSSize(width: 400, height: 100)
         popover.behavior = .transient
         popover.animates = true
 
-        let hostingView = NSHostingView(rootView: PopoverView(viewModel: viewModel, onSettings: { [weak self] in
-            self?.popover?.performClose(nil)
-            self?.openSettings()
-        }))
+        let hostingView = NSHostingView(rootView: MenuBarPopoverView())
         popover.contentViewController = NSViewController()
         popover.contentViewController?.view = hostingView
 
@@ -54,7 +45,6 @@ class StatusBarController: NSObject {
             if popover?.isShown == true {
                 popover?.performClose(nil)
             } else {
-                viewModel.captureScreenshots()
                 popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             }
         }
@@ -62,11 +52,6 @@ class StatusBarController: NSObject {
     
     private func showContextMenu() {
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "设置", action: #selector(openSettings), keyEquivalent: ","))
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "显示所有图标", action: #selector(showAllIcons), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "刷新", action: #selector(refreshIcons), keyEquivalent: "r"))
-        menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
         
         statusItem?.menu = menu
@@ -74,34 +59,7 @@ class StatusBarController: NSObject {
         statusItem?.menu = nil
     }
 
-    @objc func openSettings() {
-        if settingsWindow == nil {
-            let hostingView = NSHostingView(rootView: SettingsView(viewModel: viewModel))
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 500),
-                                  styleMask: [.titled, .closable],
-                                  backing: .buffered,
-                                  defer: false)
-            window.contentView = hostingView
-            window.title = "Mac Status Land 设置"
-            window.center()
-            settingsWindow = window
-        }
-
-        settingsWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    @objc func showAllIcons() {
-        viewModel.showAllApps()
-    }
-
-    @objc func refreshIcons() {
-        viewModel.refreshMenuBarApps()
-        viewModel.captureScreenshots()
-    }
-
     @objc func quitApp() {
-        viewModel.showAllApps()
         NSApp.terminate(nil)
     }
 }

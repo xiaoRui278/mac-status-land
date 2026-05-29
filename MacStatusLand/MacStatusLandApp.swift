@@ -17,8 +17,4 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusBarController = StatusBarController()
     }
-    
-    func applicationWillTerminate(_ notification: Notification) {
-        statusBarController?.showAllIcons()
-    }
 }
