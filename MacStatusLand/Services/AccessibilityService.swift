@@ -26,7 +26,7 @@ class AccessibilityService {
     // MARK: - 状态栏元素获取
     
     static func getStatusBarItems() -> [AXUIElement] {
-        var allItems: [AXUIElement] = []
+        print("Looking for SystemUIServer...")
         
         guard let systemUIServer = NSWorkspace.shared.runningApplications.first(where: {
             $0.bundleIdentifier == "com.apple.SystemUIServer"
@@ -36,21 +36,28 @@ class AccessibilityService {
         }
         
         let pid = systemUIServer.processIdentifier
+        print("Found SystemUIServer: \(pid)")
         let appElement = AXUIElementCreateApplication(pid)
         
         var menuBarRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef) == .success,
-              let menuBar = menuBarRef else {
+        let result = AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef)
+        print("MenuBar result: \(result.rawValue)")
+        
+        guard result == .success, let menuBar = menuBarRef else {
+            print("Could not get menu bar")
             return []
         }
         
         var childrenRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(menuBar as! AXUIElement, kAXChildrenAttribute as CFString, &childrenRef) == .success,
-              let children = childrenRef as? [AXUIElement] else {
+        let childrenResult = AXUIElementCopyAttributeValue(menuBar as! AXUIElement, kAXChildrenAttribute as CFString, &childrenRef)
+        print("Children result: \(childrenResult.rawValue)")
+        
+        guard childrenResult == .success, let children = childrenRef as? [AXUIElement] else {
+            print("Could not get children")
             return []
         }
         
-        print("Found \(children.count) status bar items in SystemUIServer")
+        print("Found \(children.count) items")
         return children
     }
     
