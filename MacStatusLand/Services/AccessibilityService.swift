@@ -26,48 +26,41 @@ class AccessibilityService {
     // MARK: - 状态栏元素获取
     
     static func getStatusBarItems() -> [AXUIElement] {
-        print("Looking for SystemUIServer...")
+        print("Scanning all running apps for status bar items...")
         
-        var systemUIServerPID: pid_t = 0
+        var statusItems: [AXUIElement] = []
         
-        if let app = NSWorkspace.shared.runningApplications.first(where: {
-            $0.bundleIdentifier == "com.apple.SystemUIServer"
-        }) {
-            systemUIServerPID = app.processIdentifier
-        } else if let app = NSWorkspace.shared.runningApplications.first(where: {
-            $0.localizedName == "SystemUIServer"
-        }) {
-            systemUIServerPID = app.processIdentifier
+        for app in NSWorkspace.shared.runningApplications {
+            guard app.activationPolicy == .regular else { continue }
+            
+            let pid = app.processIdentifier
+            let appElement = AXUIElementCreateApplication(pid)
+            
+            var menuBarRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef) == .success,
+                  let menuBar = menuBarRef else {
+                continue
+            }
+            
+            var childrenRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(menuBar as! AXUIElement, kAXChildrenAttribute as CFString, &childrenRef) == .success,
+                  let children = childrenRef as? [AXUIElement] else {
+                continue
+            }
+            
+            for child in children {
+                guard let pos = getElementPosition(child),
+                      let size = getElementSize(child) else { continue }
+                
+                if pos.y < 25 && pos.x > 1000 && size.width > 0 && size.height > 0 {
+                    statusItems.append(child)
+                    print("Found status item: \(app.localizedName ?? "?") at \(pos)")
+                }
+            }
         }
         
-        guard systemUIServerPID > 0 else {
-            print("Could not find SystemUIServer")
-            return []
-        }
-        
-        print("Found SystemUIServer: \(systemUIServerPID)")
-        let appElement = AXUIElementCreateApplication(systemUIServerPID)
-        
-        var menuBarRef: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef)
-        print("MenuBar result: \(result.rawValue)")
-        
-        guard result == .success, let menuBar = menuBarRef else {
-            print("Could not get menu bar")
-            return []
-        }
-        
-        var childrenRef: CFTypeRef?
-        let childrenResult = AXUIElementCopyAttributeValue(menuBar as! AXUIElement, kAXChildrenAttribute as CFString, &childrenRef)
-        print("Children result: \(childrenResult.rawValue)")
-        
-        guard childrenResult == .success, let children = childrenRef as? [AXUIElement] else {
-            print("Could not get children")
-            return []
-        }
-        
-        print("Found \(children.count) items")
-        return children
+        print("Found \(statusItems.count) status bar items")
+        return statusItems
     }
     
     // MARK: - 属性读取
