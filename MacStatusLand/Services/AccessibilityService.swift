@@ -32,44 +32,49 @@ class AccessibilityService {
             $0.bundleIdentifier == "com.apple.SystemUIServer"
         }) {
             systemUIServerPID = app.processIdentifier
+            print("Found SystemUIServer via bundleIdentifier: \(systemUIServerPID)")
         } else if let app = NSWorkspace.shared.runningApplications.first(where: {
             $0.localizedName == "SystemUIServer"
         }) {
             systemUIServerPID = app.processIdentifier
+            print("Found SystemUIServer via localizedName: \(systemUIServerPID)")
         } else {
             for app in NSWorkspace.shared.runningApplications {
                 if app.bundleIdentifier?.contains("SystemUIServer") == true ||
                    app.localizedName?.contains("SystemUIServer") == true {
                     systemUIServerPID = app.processIdentifier
+                    print("Found SystemUIServer via contains: \(systemUIServerPID)")
                     break
                 }
             }
         }
         
         guard systemUIServerPID > 0 else {
-            print("Could not find SystemUIServer. Running apps:")
-            for app in NSWorkspace.shared.runningApplications {
-                print("  - \(app.localizedName ?? "nil") (\(app.bundleIdentifier ?? "nil"))")
-            }
+            print("Could not find SystemUIServer")
             return []
         }
         
         let appElement = AXUIElementCreateApplication(systemUIServerPID)
         
         var menuBarRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef) == .success,
-              let menuBar = menuBarRef else {
+        let result = AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef)
+        print("AXUIElementCopyAttributeValue result: \(result.rawValue)")
+        
+        guard result == .success, let menuBar = menuBarRef else {
             print("Could not get menu bar")
             return []
         }
         
         var childrenRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(menuBar as! AXUIElement, kAXChildrenAttribute as CFString, &childrenRef) == .success,
-              let children = childrenRef as? [AXUIElement] else {
+        let childrenResult = AXUIElementCopyAttributeValue(menuBar as! AXUIElement, kAXChildrenAttribute as CFString, &childrenRef)
+        print("Children result: \(childrenResult.rawValue)")
+        
+        guard childrenResult == .success, let children = childrenRef as? [AXUIElement] else {
             print("Could not get menu bar children")
             return []
         }
         
+        print("Found \(children.count) menu bar items")
         return children
     }
     
