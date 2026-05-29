@@ -9,17 +9,27 @@ class IconDiscoveryService {
         let items = AccessibilityService.getMenuBarItems()
         var apps: [MenuBarApp] = []
         
-        for item in items {
-            guard let bundleId = AccessibilityService.getElementBundleIdentifier(item) else {
+        for (index, item) in items.enumerated() {
+            let bundleId = AccessibilityService.getElementBundleIdentifier(item)
+            let title = AccessibilityService.getElementTitle(item)
+            let label = AccessibilityService.getElementStatusLabel(item)
+            let position = AccessibilityService.getElementPosition(item)
+            let size = AccessibilityService.getElementSize(item)
+            
+            print("Item \(index): bundleId=\(bundleId ?? "nil"), title=\(title ?? "nil"), label=\(label ?? "nil"), pos=\(position?.debugDescription ?? "nil"), size=\(size?.debugDescription ?? "nil")")
+            
+            guard let bundleId = bundleId else {
+                print("  -> Skipped: no bundleId")
                 continue
             }
             
             if isSystemIcon(bundleIdentifier: bundleId) {
+                print("  -> Skipped: system icon")
                 continue
             }
             
-            guard let position = AccessibilityService.getElementPosition(item),
-                  let _ = AccessibilityService.getElementSize(item) else {
+            guard let position = position, let _ = size else {
+                print("  -> Skipped: no position/size")
                 continue
             }
             
@@ -32,6 +42,7 @@ class IconDiscoveryService {
             app.originalPosition = position
             
             apps.append(app)
+            print("  -> Added: \(displayName)")
         }
         
         discoveredApps = apps
