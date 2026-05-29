@@ -19,17 +19,36 @@ class AccessibilityService {
     
     // MARK: - 状态栏元素获取
     
-    /// 状态栏由 SystemUIServer 托管，不是个别应用
     static func getMenuBarItems() -> [AXUIElement] {
-        guard let systemUIServer = NSWorkspace.shared.runningApplications.first(where: {
+        var systemUIServerPID: pid_t = 0
+        
+        if let app = NSWorkspace.shared.runningApplications.first(where: {
             $0.bundleIdentifier == "com.apple.SystemUIServer"
-        }) else {
-            print("Could not find SystemUIServer")
+        }) {
+            systemUIServerPID = app.processIdentifier
+        } else if let app = NSWorkspace.shared.runningApplications.first(where: {
+            $0.localizedName == "SystemUIServer"
+        }) {
+            systemUIServerPID = app.processIdentifier
+        } else {
+            for app in NSWorkspace.shared.runningApplications {
+                if app.bundleIdentifier?.contains("SystemUIServer") == true ||
+                   app.localizedName?.contains("SystemUIServer") == true {
+                    systemUIServerPID = app.processIdentifier
+                    break
+                }
+            }
+        }
+        
+        guard systemUIServerPID > 0 else {
+            print("Could not find SystemUIServer. Running apps:")
+            for app in NSWorkspace.shared.runningApplications {
+                print("  - \(app.localizedName ?? "nil") (\(app.bundleIdentifier ?? "nil"))")
+            }
             return []
         }
         
-        let pid = systemUIServer.processIdentifier
-        let appElement = AXUIElementCreateApplication(pid)
+        let appElement = AXUIElementCreateApplication(systemUIServerPID)
         
         var menuBarRef: CFTypeRef?
         guard AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef) == .success,
