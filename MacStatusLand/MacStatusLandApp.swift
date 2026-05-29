@@ -17,14 +17,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("Application did finish launching")
-        let hasAccess = AccessibilityService.checkAccessibility(prompt: false)
-        print("Accessibility permission: \(hasAccess)")
         
-        if hasAccess {
-            statusBarController = StatusBarController()
-        } else {
-            DispatchQueue.main.async {
-                self.showPermissionWindow()
+        statusBarController = StatusBarController()
+        
+        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            let hasAccess = AccessibilityService.checkAccessibility(prompt: false)
+            if hasAccess {
+                print("Accessibility permission granted")
             }
         }
     }
