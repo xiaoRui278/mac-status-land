@@ -9,7 +9,8 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "MacStatusLand",
-            path: "MacStatusLand"
+            path: "MacStatusLand",
+            exclude: ["Info.plist", "Entitlements.entitlements"]
         )
     ]
 )
