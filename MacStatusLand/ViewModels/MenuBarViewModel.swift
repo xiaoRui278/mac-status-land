@@ -30,7 +30,7 @@ class MenuBarViewModel: ObservableObject {
     }
     
     private func checkAccessibilityPermission() {
-        if !AccessibilityService.checkAccessibility() {
+        if !AccessibilityService.checkAccessibility(prompt: false) {
             showPermissionAlert = true
         }
     }

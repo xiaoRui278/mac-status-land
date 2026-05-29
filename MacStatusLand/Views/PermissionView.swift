@@ -32,7 +32,8 @@ struct PermissionView: View {
             .background(Color.gray.opacity(0.1))
             .cornerRadius(12)
             
-            Button("打开系统设置") {
+            Button("打开系统设置并请求权限") {
+                _ = AccessibilityService.checkAccessibility(prompt: true)
                 openAccessibilitySettings()
             }
             .buttonStyle(.borderedProminent)

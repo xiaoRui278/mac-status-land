@@ -12,9 +12,12 @@ class AccessibilityService {
     
     // MARK: - 权限检查
     
-    static func checkAccessibility() -> Bool {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-        return AXIsProcessTrustedWithOptions(options)
+    static func checkAccessibility(prompt: Bool = false) -> Bool {
+        if prompt {
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+            return AXIsProcessTrustedWithOptions(options)
+        }
+        return AXIsProcessTrusted()
     }
     
     // MARK: - 状态栏元素获取

@@ -16,7 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var permissionWindow: NSWindow?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if AccessibilityService.checkAccessibility() {
+        if AccessibilityService.checkAccessibility(prompt: false) {
             statusBarController = StatusBarController()
         } else {
             showPermissionWindow()
@@ -44,7 +44,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // 监听权限变化
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
-            if AccessibilityService.checkAccessibility() {
+            if AccessibilityService.checkAccessibility(prompt: false) {
                 timer.invalidate()
                 window.close()
                 self?.statusBarController = StatusBarController()
