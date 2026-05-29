@@ -18,7 +18,7 @@ class StatusBarController: NSObject {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "sidebar.right", accessibilityDescription: "Mac Status Land")
+            button.title = ">>"
             button.action = #selector(togglePopover)
             button.target = self
             print("Status bar button created successfully")
