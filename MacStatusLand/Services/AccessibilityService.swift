@@ -25,34 +25,33 @@ class AccessibilityService {
     
     // MARK: - 状态栏元素获取
     
-    static func getMenuBarItems() -> [AXUIElement] {
+    static func getStatusBarItems() -> [AXUIElement] {
         var allItems: [AXUIElement] = []
         
-        let systemApps = NSWorkspace.shared.runningApplications.filter {
-            $0.activationPolicy == .regular || $0.bundleIdentifier?.hasPrefix("com.apple.") == true
+        guard let systemUIServer = NSWorkspace.shared.runningApplications.first(where: {
+            $0.bundleIdentifier == "com.apple.SystemUIServer"
+        }) else {
+            print("Could not find SystemUIServer")
+            return []
         }
         
-        for app in systemApps {
-            let pid = app.processIdentifier
-            let appElement = AXUIElementCreateApplication(pid)
-            
-            var menuBarRef: CFTypeRef?
-            guard AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef) == .success,
-                  let menuBar = menuBarRef else {
-                continue
-            }
-            
-            var childrenRef: CFTypeRef?
-            guard AXUIElementCopyAttributeValue(menuBar as! AXUIElement, kAXChildrenAttribute as CFString, &childrenRef) == .success,
-                  let children = childrenRef as? [AXUIElement] else {
-                continue
-            }
-            
-            allItems.append(contentsOf: children)
+        let pid = systemUIServer.processIdentifier
+        let appElement = AXUIElementCreateApplication(pid)
+        
+        var menuBarRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef) == .success,
+              let menuBar = menuBarRef else {
+            return []
         }
         
-        print("Found \(allItems.count) total menu bar items")
-        return allItems
+        var childrenRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(menuBar as! AXUIElement, kAXChildrenAttribute as CFString, &childrenRef) == .success,
+              let children = childrenRef as? [AXUIElement] else {
+            return []
+        }
+        
+        print("Found \(children.count) status bar items in SystemUIServer")
+        return children
     }
     
     // MARK: - 属性读取

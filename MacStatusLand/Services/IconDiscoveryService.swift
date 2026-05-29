@@ -6,34 +6,35 @@ class IconDiscoveryService {
     private var discoveredApps: [MenuBarApp] = []
     
     func discoverMenuBarApps() -> [MenuBarApp] {
-        let items = AccessibilityService.getMenuBarItems()
+        let items = AccessibilityService.getStatusBarItems()
         var apps: [MenuBarApp] = []
+        var seenBundleIds: Set<String> = []
         
         for (index, item) in items.enumerated() {
             let bundleId = AccessibilityService.getElementBundleIdentifier(item)
             let title = AccessibilityService.getElementTitle(item)
-            let label = AccessibilityService.getElementStatusLabel(item)
             let position = AccessibilityService.getElementPosition(item)
             let size = AccessibilityService.getElementSize(item)
             
-            print("Item \(index): bundleId=\(bundleId ?? "nil"), title=\(title ?? "nil"), label=\(label ?? "nil"), pos=\(position?.debugDescription ?? "nil"), size=\(size?.debugDescription ?? "nil")")
+            guard let bundleId = bundleId, let position = position, let size = size else {
+                continue
+            }
             
-            guard let bundleId = bundleId else {
-                print("  -> Skipped: no bundleId")
+            if seenBundleIds.contains(bundleId) {
                 continue
             }
             
             if isSystemIcon(bundleIdentifier: bundleId) {
-                print("  -> Skipped: system icon")
+                print("Item \(index): \(title ?? "nil") -> Skipped system icon")
                 continue
             }
             
-            guard let position = position, let _ = size else {
-                print("  -> Skipped: no position/size")
+            if size.width == 0 || size.height == 0 {
                 continue
             }
             
-            let displayName = getAppName(bundleIdentifier: bundleId) ?? bundleId
+            seenBundleIds.insert(bundleId)
+            let displayName = getAppName(bundleIdentifier: bundleId) ?? title ?? bundleId
             
             var app = MenuBarApp(
                 bundleIdentifier: bundleId,
@@ -42,7 +43,7 @@ class IconDiscoveryService {
             app.originalPosition = position
             
             apps.append(app)
-            print("  -> Added: \(displayName)")
+            print("Item \(index): \(title ?? "nil") -> Added \(displayName)")
         }
         
         discoveredApps = apps
@@ -62,7 +63,7 @@ class IconDiscoveryService {
     }
     
     func getElement(for bundleIdentifier: String) -> AXUIElement? {
-        let items = AccessibilityService.getMenuBarItems()
+        let items = AccessibilityService.getStatusBarItems()
         return items.first { item in
             AccessibilityService.getElementBundleIdentifier(item) == bundleIdentifier
         }

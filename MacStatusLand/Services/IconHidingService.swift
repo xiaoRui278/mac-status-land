@@ -136,7 +136,7 @@ class IconHidingService {
     // MARK: - 辅助方法
     
     private func getElement(for bundleIdentifier: String) -> AXUIElement? {
-        let items = AccessibilityService.getMenuBarItems()
+        let items = AccessibilityService.getStatusBarItems()
         return items.first { item in
             AccessibilityService.getElementBundleIdentifier(item) == bundleIdentifier
         }
