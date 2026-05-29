@@ -23,7 +23,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if hasAccess {
             statusBarController = StatusBarController()
         } else {
-            showPermissionWindow()
+            DispatchQueue.main.async {
+                self.showPermissionWindow()
+            }
         }
     }
     
