@@ -32,6 +32,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func showPermissionWindow() {
+        print("Showing permission window")
         let viewModel = MenuBarViewModel()
         let hostingView = NSHostingView(rootView: PermissionView(viewModel: viewModel))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 450, height: 500),
@@ -45,6 +46,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        print("Permission window shown")
         
         // 监听权限变化
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
