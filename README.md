@@ -1,30 +1,50 @@
 # Mac Status Land
 
-> **Vibe Coding 实现** — 本项目完全由 AI（Claude）生成，通过自然语言描述需求，AI 自动完成架构设计、代码实现和文档编写。
+<p align="center">
+  <img src="https://img.shields.io/badge/Swift-5.9+-orange?logo=swift" alt="Swift">
+  <img src="https://img.shields.io/badge/macOS-12.0+-blue?logo=apple" alt="macOS">
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
+  <img src="https://img.shields.io/badge/AI-Vibe%20Coding-purple" alt="AI Vibe Coding">
+</p>
 
-一个 macOS 菜单栏应用，用于管理被刘海屏遮挡的状态栏图标。
+<p align="center">
+  <strong>一个 macOS 菜单栏应用，用于管理被刘海屏遮挡的状态栏图标</strong>
+</p>
 
-## 功能
+---
 
-- 自动发现第三方应用的状态栏图标
-- 隐藏/显示图标
-- 点击弹出窗口显示隐藏的图标
-- 自定义隐藏规则
-- 开机自动启动
-- 状态持久化
+## ✨ 功能特点
 
-## 系统要求
+- 🔍 **自动发现** — 自动扫描第三方应用的状态栏图标
+- 🖱️ **一键触发** — 点击图标直接打开原应用界面
+- 🎯 **精准识别** — 显示应用图标和名称
+- 🌙 **深色模式** — 完美支持 macOS 深色/浅色模式
 
-- macOS 12.0 (Monterey) 或更高版本
-- Xcode 14.0 或更高版本（用于编译）
+## 📸 界面预览
 
-## 安装
+<p align="center">
+  <img src="screenshot.png" width="300" alt="MacStatusLand Screenshot">
+</p>
 
-### 从源码编译
+## 🚀 快速开始
+
+### 系统要求
+
+| 要求 | 版本 |
+|------|------|
+| macOS | 12.0 (Monterey) 或更高 |
+| Xcode | 14.0 或更高（仅编译需要） |
+
+### 安装
 
 ```bash
+# 克隆仓库
 git clone git@github.com:xiaoRui278/mac-status-bar-land.git
+
+# 进入项目目录
 cd mac-status-bar-land/MacStatusLand
+
+# 运行
 swift run
 ```
 
@@ -32,70 +52,76 @@ swift run
 
 首次运行时，应用会请求以下权限：
 
-1. **辅助功能**：用于读取和操控状态栏图标
-2. **屏幕录制**：用于截取状态栏图标图像
+| 权限 | 用途 | 必需 |
+|------|------|------|
+| 辅助功能 | 读取和触发状态栏图标点击 | ✅ |
 
-请在系统设置中授权。
+> 💡 **提示**：请在 **系统设置 → 隐私与安全性 → 辅助功能** 中授权。
 
-## 使用方法
+## 📖 使用方法
 
-1. 启动应用后，会在菜单栏显示图标（`›`）
-2. 左键点击图标：显示/隐藏 Popover 窗口
-3. 右键点击图标：显示菜单（退出）
-4. 在 Popover 中点击图标：触发原图标的点击事件
+1. 启动应用后，菜单栏会显示 `›` 图标
+2. **左键点击** — 显示 Popover 窗口，列出所有第三方应用图标
+3. **右键点击** — 显示退出菜单
+4. **点击图标** — 直接打开对应应用的界面
 
 ### ⚠️ 重要提示
 
 **建议将 MacStatusLand 图标拖动到菜单栏最右侧**，防止应用自身的图标被刘海屏遮挡。
 
-操作方法：按住 `⌘ Command` 键，用鼠标拖动图标到最右侧位置。
+> 操作方法：按住 `⌘ Command` 键，用鼠标拖动图标到最右侧位置。
 
-## 技术栈
-
-- Swift 5.9+
-- SwiftUI
-- AppKit
-- Accessibility API
-- CoreGraphics (CGEvent + CGWindowListCreateImage)
-
-## 架构
+## 🏗️ 技术架构
 
 ```
 MacStatusLand/
 ├── Services/
-│   ├── AccessibilityService.swift   # Accessibility API 封装
-│   ├── IconDiscoveryService.swift   # 图标发现服务
-│   ├── IconScreenshotService.swift  # 图标截图服务
-│   ├── IconHidingService.swift      # 图标隐藏/显示
-│   ├── PersistenceService.swift     # 数据持久化
-│   └── LoginItemService.swift       # 开机自启
-├── ViewModels/
-│   └── MenuBarViewModel.swift       # 状态管理
+│   ├── AccessibilityService.swift    # Accessibility API 封装
+│   └── IconDiscoveryService.swift    # 图标发现服务
 ├── Views/
-│   ├── PopoverView.swift            # 弹出窗口
-│   ├── SettingsView.swift           # 设置界面
-│   └── PermissionView.swift         # 权限引导
-└── Models/
-    ├── MenuBarApp.swift             # 应用数据模型
-    └── AppSettings.swift            # 设置数据模型
+│   └── MenuBarPopoverView.swift      # Popover 界面
+├── StatusBarController.swift         # 状态栏控制器
+└── MacStatusLandApp.swift            # 应用入口
 ```
 
-## 技术细节
+### 技术栈
 
-### 状态栏图标操控
+| 技术 | 用途 |
+|------|------|
+| Swift / SwiftUI | 主要开发语言和 UI 框架 |
+| AppKit | macOS 原生组件 |
+| Accessibility API | 读取状态栏图标信息 |
+| AXUIElementPerformAction | 触发图标点击事件 |
 
-macOS 没有公开 API 可以直接移动状态栏图标。所有状态栏管理应用（如 Bartender、Hidden Bar）都使用相同的技术：
+### 工作原理
 
-1. 使用 Accessibility API 发现和读取图标信息
-2. 使用 CGEvent 模拟 Cmd+drag 来移动图标
-3. 状态栏图标由 SystemUIServer 托管
+1. **发现图标** — 使用 Accessibility API 扫描 `AXExtrasMenuBar` 获取所有状态栏图标
+2. **获取信息** — 读取每个图标的 `AXTitle`、`AXDescription`、`AXIdentifier`
+3. **显示图标** — 优先使用应用图标，SF Symbol 作为备选
+4. **触发点击** — 使用 `AXUIElementPerformAction(kAXPressAction)` 直接触发原图标动作
 
-### 权限要求
+## 🤝 相关项目
 
-- **辅助功能**：用于读取和操控状态栏图标
-- **屏幕录制**：用于截取图标图像
-- **沙盒**：必须禁用（Accessibility API 不支持沙盒）
+| 项目 | 说明 |
+|------|------|
+| [Ice](https://github.com/jordanbaird/Ice) | 开源状态栏管理器 |
+| Bartender | 商业应用，功能更丰富 |
+| Hidden Bar | 开源，使用 Accessibility API |
 
-## 许可证
+## 📝 更新日志
 
-MIT License
+### v1.0.0 (2025-06-01)
+- ✅ 初始发布
+- ✅ 支持第三方应用图标发现和点击
+- ✅ 支持 macOS 深色模式
+- ✅ 使用 Accessibility API 直接触发点击
+
+## 📄 许可证
+
+MIT License © [xiaoRui278](https://github.com/xiaoRui278)
+
+---
+
+<p align="center">
+  <sub>Made with ❤️ and AI (Vibe Coding)</sub>
+</p>
