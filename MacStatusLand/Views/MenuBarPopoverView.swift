@@ -50,11 +50,11 @@ struct MenuBarPopoverView: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("status_bar_icon".localized)
+                Text("status_bar_icon".localized(settings.appLanguage))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.primary)
                 
-                Text("icons_count".localized(icons.count))
+                Text("icons_count".localizedFormat(settings.appLanguage, icons.count))
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
             }
@@ -92,7 +92,7 @@ struct MenuBarPopoverView: View {
             }
             
             VStack(spacing: 6) {
-                Text("error_title".localized)
+                Text("error_title".localized(settings.appLanguage))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.primary)
                 
@@ -107,7 +107,7 @@ struct MenuBarPopoverView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "gear")
                         .font(.system(size: 12, weight: .medium))
-                    Text("open_settings".localized)
+                    Text("open_settings".localized(settings.appLanguage))
                         .font(.system(size: 13, weight: .medium))
                 }
                 .padding(.horizontal, 16)
@@ -142,11 +142,11 @@ struct MenuBarPopoverView: View {
             }
             
             VStack(spacing: 6) {
-                Text("no_icons".localized)
+                Text("no_icons".localized(settings.appLanguage))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.primary)
                 
-                Text("refresh_hint".localized)
+                Text("refresh_hint".localized(settings.appLanguage))
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
             }
@@ -188,7 +188,7 @@ struct MenuBarPopoverView: View {
                 Image(systemName: "cursorarrow.click.2")
                     .font(.system(size: 11))
                     .foregroundColor(.tertiaryLabel)
-                Text("click_hint".localized)
+                Text("click_hint".localized(settings.appLanguage))
                     .font(.system(size: 11))
                     .foregroundColor(.tertiaryLabel)
             }
@@ -232,7 +232,7 @@ struct MenuBarPopoverView: View {
         
         if icons.isEmpty {
             showError = true
-            errorMessage = "refresh_hint".localized
+            errorMessage = "refresh_hint".localized(settings.appLanguage)
         }
     }
     

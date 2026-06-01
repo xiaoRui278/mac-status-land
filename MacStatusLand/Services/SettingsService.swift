@@ -17,11 +17,11 @@ class SettingsService: ObservableObject {
     
     var refreshIntervalLabel: String {
         switch autoRefreshInterval {
-        case 0: return "off".localized
-        case 15: return "seconds".localized(15)
-        case 30: return "seconds".localized(30)
-        case 60: return "seconds".localized(60)
-        default: return "off".localized
+        case 0: return "off".localized(appLanguage)
+        case 15: return "seconds".localizedFormat(appLanguage, 15)
+        case 30: return "seconds".localizedFormat(appLanguage, 30)
+        case 60: return "seconds".localizedFormat(appLanguage, 60)
+        default: return "off".localized(appLanguage)
         }
     }
     

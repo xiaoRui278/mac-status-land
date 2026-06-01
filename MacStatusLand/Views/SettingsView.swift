@@ -17,24 +17,24 @@ struct SettingsView: View {
                         isOn: $settings.launchAtLogin,
                         icon: "power",
                         iconColor: .green,
-                        title: "launch_at_login".localized
+                        title: "launch_at_login".localized(language)
                     )
                     .onChange(of: settings.launchAtLogin) { newValue in
                         toggleLaunchAtLogin(newValue)
                     }
                 }
                 
-                Section("section_display".localized) {
+                Section("section_display".localized(language)) {
                     settingsPicker(
                         selection: $settings.autoRefreshInterval,
                         icon: "arrow.clockwise",
                         iconColor: .blue,
-                        title: "auto_refresh".localized,
+                        title: "auto_refresh".localized(language),
                         options: [
-                            (0, "off".localized),
-                            (15, "seconds".localized(15)),
-                            (30, "seconds".localized(30)),
-                            (60, "seconds".localized(60))
+                            (0, "off".localized(language)),
+                            (15, "seconds".localizedFormat(language, 15)),
+                            (30, "seconds".localizedFormat(language, 30)),
+                            (60, "seconds".localizedFormat(language, 60))
                         ]
                     )
                     
@@ -42,16 +42,16 @@ struct SettingsView: View {
                         isOn: $settings.showSystemApps,
                         icon: "app.badge",
                         iconColor: .orange,
-                        title: "show_system_apps".localized
+                        title: "show_system_apps".localized(language)
                     )
                 }
                 
-                Section("section_general".localized) {
+                Section("section_general".localized(language)) {
                     settingsPicker(
                         selection: $language,
                         icon: "globe",
                         iconColor: .purple,
-                        title: "language".localized,
+                        title: "language".localized(language),
                         options: [
                             ("zh", "中文"),
                             ("en", "English")
@@ -83,11 +83,11 @@ struct SettingsView: View {
                 )
             
             VStack(alignment: .leading, spacing: 2) {
-                Text("settings".localized)
+                Text("settings".localized(language))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.primary)
                 
-                Text("settings_description".localized)
+                Text("settings_description".localized(language))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
