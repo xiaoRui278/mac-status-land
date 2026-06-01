@@ -43,12 +43,11 @@
 
 ### 安装
 
-#### 方式一：从源码编译
+#### 方式一：Homebrew（推荐）
 
 ```bash
-git clone git@github.com:xiaoRui278/mac-status-land.git
-cd mac-status-land/MacStatusLand
-swift run
+brew tap xiaoRui278/tap
+brew install --cask macstatusland
 ```
 
 #### 方式二：下载 DMG
@@ -56,6 +55,14 @@ swift run
 1. 前往 [Releases](https://github.com/xiaoRui278/mac-status-land/releases) 下载最新版本
 2. 打开 DMG，将 MacStatusLand.app 拖到 Applications
 3. 首次运行需要在 **系统设置 → 隐私与安全性 → 辅助功能** 中授权
+
+#### 方式三：从源码编译
+
+```bash
+git clone git@github.com:xiaoRui278/mac-status-land.git
+cd mac-status-land/MacStatusLand
+swift run
+```
 
 ### 权限设置
 
