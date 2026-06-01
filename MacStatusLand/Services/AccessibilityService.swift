@@ -125,10 +125,9 @@ class AccessibilityService {
         var image: NSImage?
         var imageRef: AnyObject?
         let imageResult = AXUIElementCopyAttributeValue(element, "AXImage" as CFString, &imageRef)
-        if imageResult == .success {
-            if let cgImage = imageRef as! CGImage? {
-                image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
-            }
+        if imageResult == .success, let cgImage = imageRef {
+            let img = cgImage as! CGImage
+            image = NSImage(cgImage: img, size: NSSize(width: img.width, height: img.height))
         }
         
         if image == nil {
