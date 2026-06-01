@@ -30,7 +30,7 @@ struct MenuBarPopoverView: View {
             footerSection
         }
         .background(Color(NSColor.windowBackgroundColor))
-        .frame(width: 380)
+        .frame(width: 280)
         .onAppear {
             discoverIcons()
         }
@@ -62,8 +62,8 @@ struct MenuBarPopoverView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
     }
     
     // MARK: - Error Section
@@ -165,7 +165,7 @@ struct MenuBarPopoverView: View {
                     }
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
             .padding(.vertical, 8)
         }
         .frame(maxHeight: 320)
@@ -182,7 +182,7 @@ struct MenuBarPopoverView: View {
                 .font(.system(size: 11))
                 .foregroundColor(.tertiaryLabel)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
         .padding(.vertical, 10)
     }
     
@@ -238,7 +238,7 @@ struct IconRow: View {
     
     var body: some View {
         Button(action: onClick) {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 ZStack {
                     Circle()
                         .fill(Color.accentColor.opacity(isHovered ? 0.15 : 0.1))
@@ -274,7 +274,7 @@ struct IconRow: View {
                     .foregroundColor(.tertiaryLabel)
                     .opacity(isHovered ? 1 : 0)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 8)
