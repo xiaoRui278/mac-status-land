@@ -28,6 +28,10 @@ class AccessibilityService {
         for app in apps {
             guard let appName = app.localizedName else { continue }
             
+            if let bundleID = app.bundleIdentifier, bundleID.hasPrefix("com.apple.") {
+                continue
+            }
+            
             let pid = app.processIdentifier
             let appRef = AXUIElementCreateApplication(pid)
             
