@@ -1,0 +1,20 @@
+/* Menu Bar */
+"status_bar_icon" = "Status Bar Icons";
+"icons_count" = "%lld icons";
+
+/* Settings */
+"settings" = "Settings";
+"settings_description" = "MacStatusLand Preferences";
+"launch_at_login" = "Launch at Login";
+"auto_refresh" = "Auto Refresh";
+"show_system_apps" = "Show System Apps";
+"language" = "Language";
+"off" = "Off";
+"seconds" = "%lld seconds";
+
+/* States */
+"no_icons" = "No Icons";
+"refresh_hint" = "Click refresh to get status bar icons";
+"click_hint" = "Click icon to trigger action";
+"error_title" = "Cannot Get Icons";
+"open_settings" = "Open System Settings";

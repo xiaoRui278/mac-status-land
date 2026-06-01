@@ -28,8 +28,10 @@ class AccessibilityService {
         for app in apps {
             guard let appName = app.localizedName else { continue }
             
-            if let bundleID = app.bundleIdentifier, bundleID.hasPrefix("com.apple.") {
-                continue
+            if !SettingsService.shared.showSystemApps {
+                if let bundleID = app.bundleIdentifier, bundleID.hasPrefix("com.apple.") {
+                    continue
+                }
             }
             
             let appIcon = app.icon

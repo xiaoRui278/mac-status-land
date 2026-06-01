@@ -3,14 +3,18 @@ import PackageDescription
 
 let package = Package(
     name: "MacStatusLand",
+    defaultLocalization: "zh",
     platforms: [
-        .macOS(.v12)
+        .macOS(.v13)
     ],
     targets: [
         .executableTarget(
             name: "MacStatusLand",
             path: "MacStatusLand",
-            exclude: ["Info.plist", "Entitlements.entitlements"]
+            exclude: ["Info.plist", "Entitlements.entitlements"],
+            resources: [
+                .process("Resources")
+            ]
         )
     ]
 )

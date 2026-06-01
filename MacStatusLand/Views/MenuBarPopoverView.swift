@@ -13,6 +13,8 @@ struct MenuBarPopoverView: View {
     @State private var icons: [IconItem] = []
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
+    @State private var refreshTimer: Timer?
+    @ObservedObject private var settings = SettingsService.shared
     
     var body: some View {
         VStack(spacing: 0) {
@@ -33,6 +35,13 @@ struct MenuBarPopoverView: View {
         .frame(width: 280)
         .onAppear {
             discoverIcons()
+            startRefreshTimer()
+        }
+        .onDisappear {
+            stopRefreshTimer()
+        }
+        .onChange(of: settings.autoRefreshInterval) { _ in
+            startRefreshTimer()
         }
     }
     
@@ -41,11 +50,11 @@ struct MenuBarPopoverView: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("状态栏图标")
+                Text("status_bar_icon".localized)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.primary)
                 
-                Text("\(icons.count) 个图标")
+                Text("icons_count".localized(icons.count))
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
             }
@@ -83,7 +92,7 @@ struct MenuBarPopoverView: View {
             }
             
             VStack(spacing: 6) {
-                Text("无法获取状态栏图标")
+                Text("error_title".localized)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.primary)
                 
@@ -98,7 +107,7 @@ struct MenuBarPopoverView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "gear")
                         .font(.system(size: 12, weight: .medium))
-                    Text("打开系统设置")
+                    Text("open_settings".localized)
                         .font(.system(size: 13, weight: .medium))
                 }
                 .padding(.horizontal, 16)
@@ -133,11 +142,11 @@ struct MenuBarPopoverView: View {
             }
             
             VStack(spacing: 6) {
-                Text("暂无图标")
+                Text("no_icons".localized)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.primary)
                 
-                Text("点击刷新按钮获取状态栏图标")
+                Text("refresh_hint".localized)
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
             }
@@ -178,7 +187,7 @@ struct MenuBarPopoverView: View {
             Image(systemName: "cursorarrow.click.2")
                 .font(.system(size: 11))
                 .foregroundColor(.tertiaryLabel)
-            Text("点击图标触发对应操作")
+            Text("click_hint".localized)
                 .font(.system(size: 11))
                 .foregroundColor(.tertiaryLabel)
         }
@@ -206,7 +215,7 @@ struct MenuBarPopoverView: View {
         
         if icons.isEmpty {
             showError = true
-            errorMessage = "未找到状态栏图标。请确保已授予辅助功能权限。"
+            errorMessage = "refresh_hint".localized
         }
     }
     
@@ -221,6 +230,21 @@ struct MenuBarPopoverView: View {
     private func openAccessibilitySettings() {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
         NSWorkspace.shared.open(url)
+    }
+    
+    // MARK: - Timer
+    
+    private func startRefreshTimer() {
+        stopRefreshTimer()
+        guard settings.autoRefreshInterval > 0 else { return }
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(settings.autoRefreshInterval), repeats: true) { _ in
+            discoverIcons()
+        }
+    }
+    
+    private func stopRefreshTimer() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
     }
 }
 

@@ -1,0 +1,20 @@
+/* Menu Bar */
+"status_bar_icon" = "状态栏图标";
+"icons_count" = "%lld 个图标";
+
+/* Settings */
+"settings" = "设置";
+"settings_description" = "MacStatusLand 偏好设置";
+"launch_at_login" = "开机启动";
+"auto_refresh" = "自动刷新";
+"show_system_apps" = "显示系统应用";
+"language" = "语言";
+"off" = "关闭";
+"seconds" = "%lld 秒";
+
+/* States */
+"no_icons" = "暂无图标";
+"refresh_hint" = "点击刷新按钮获取状态栏图标";
+"click_hint" = "点击图标触发对应操作";
+"error_title" = "无法获取状态栏图标";
+"open_settings" = "打开系统设置";
