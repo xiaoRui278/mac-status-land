@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject private var settings = SettingsService.shared
+    @State private var language = SettingsService.shared.appLanguage
     
     var body: some View {
         VStack(spacing: 0) {
@@ -46,7 +47,7 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    Picker(selection: $settings.appLanguage) {
+                    Picker(selection: $language) {
                         Text("中文").tag("zh")
                         Text("English").tag("en")
                     } label: {
@@ -57,6 +58,9 @@ struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .onChange(of: language) { newValue in
+                        settings.appLanguage = newValue
+                    }
                 }
             }
             .formStyle(.grouped)
