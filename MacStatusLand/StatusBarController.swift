@@ -71,6 +71,8 @@ class StatusBarController: NSObject {
     }
 
     @objc func openSettings() {
+        NSApp.setActivationPolicy(.regular)
+        
         let settingsWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 380, height: 400),
             styleMask: [.titled, .closable],
@@ -82,6 +84,14 @@ class StatusBarController: NSObject {
         settingsWindow.center()
         settingsWindow.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: settingsWindow,
+            queue: .main
+        ) { _ in
+            NSApp.setActivationPolicy(.accessory)
+        }
     }
 
     private func toggleLaunchAtLogin(_ enabled: Bool) {
