@@ -46,8 +46,7 @@
 #### 方式一：Homebrew（推荐）
 
 ```bash
-brew tap xiaoRui278/tap
-brew install --cask macstatusland
+brew install xiaoRui278/tap/macstatusland
 ```
 
 #### 方式二：下载 DMG
