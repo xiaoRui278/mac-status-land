@@ -100,14 +100,6 @@ MacStatusLand/
 3. **显示图标** — 优先使用应用图标，SF Symbol 作为备选
 4. **触发点击** — 使用 `AXUIElementPerformAction(kAXPressAction)` 直接触发原图标动作
 
-## 🤝 相关项目
-
-| 项目 | 说明 |
-|------|------|
-| [Ice](https://github.com/jordanbaird/Ice) | 开源状态栏管理器 |
-| Bartender | 商业应用，功能更丰富 |
-| Hidden Bar | 开源，使用 Accessibility API |
-
 ## 📝 更新日志
 
 ### v1.0.0 (2025-06-01)
