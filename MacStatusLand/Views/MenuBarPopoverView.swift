@@ -184,17 +184,8 @@ struct MenuBarPopoverView: View {
     
     private var footerSection: some View {
         VStack(spacing: 6) {
-            HStack {
-                Image(systemName: "cursorarrow.click.2")
-                    .font(.system(size: 11))
-                    .foregroundColor(.tertiaryLabel)
-                Text("click_hint".localized(settings.appLanguage))
-                    .font(.system(size: 11))
-                    .foregroundColor(.tertiaryLabel)
-            }
-            
             Button(action: {
-                if let url = URL(string: "https://github.com/xiaoRui278/mac-status-bar-land") {
+                if let url = URL(string: "https://github.com/xiaoRui278/mac-status-land") {
                     NSWorkspace.shared.open(url)
                 }
             }) {
