@@ -91,7 +91,8 @@ class AccessibilityService {
                 let hasTitle = !(icon.title.isEmpty)
                 let hasDescription = icon.description != nil && !icon.description!.isEmpty
                 let hasIdentifier = icon.identifier != nil && !icon.identifier!.isEmpty
-                if hasTitle || hasDescription || hasIdentifier {
+                let hasAppName = !(icon.appName.isEmpty)
+                if hasTitle || hasDescription || hasIdentifier || hasAppName {
                     icons.append(icon)
                 }
             }
