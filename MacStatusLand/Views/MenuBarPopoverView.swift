@@ -14,66 +14,177 @@ struct MenuBarPopoverView: View {
     @State private var errorMessage: String = ""
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("状态栏图标 (\(icons.count))")
-                    .font(.headline)
-                Spacer()
-                Button("刷新") {
-                    discoverIcons()
-                }
-                .buttonStyle(.link)
-            }
-            .padding(.bottom, 8)
+        VStack(spacing: 0) {
+            headerSection
             
             if showError {
-                VStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.title2)
-                        .foregroundColor(.orange)
-                    Text("无法获取状态栏图标")
-                        .font(.headline)
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                    Button("打开系统设置") {
-                        openAccessibilitySettings()
-                    }
-                    .buttonStyle(.link)
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding()
+                errorSection
             } else if icons.isEmpty {
-                Text("点击刷新获取状态栏图标")
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding()
+                emptyStateSection
             } else {
-                ScrollView {
-                    VStack(spacing: 4) {
-                        ForEach(icons) { icon in
-                            IconRow(title: icon.title, sfSymbol: icon.sfSymbol, appName: icon.appName) {
-                                clickIcon(at: icon.index)
-                            }
-                        }
-                    }
-                }
-                .frame(maxHeight: 300)
+                iconListSection
             }
             
             Divider()
-            
-            Text("点击图标触发对应操作")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            footerSection
         }
-        .padding()
-        .frame(width: 400)
+        .background(Color(NSColor.windowBackgroundColor))
+        .frame(width: 380)
         .onAppear {
             discoverIcons()
         }
     }
+    
+    // MARK: - Header Section
+    
+    private var headerSection: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("状态栏图标")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.primary)
+                
+                Text("\(icons.count) 个图标")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            Button(action: discoverIcons) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.accentColor)
+                    .frame(width: 28, height: 28)
+                    .background(Color.accentColor.opacity(0.1))
+                    .cornerRadius(6)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+    
+    // MARK: - Error Section
+    
+    private var errorSection: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.1))
+                    .frame(width: 48, height: 48)
+                
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.orange)
+            }
+            
+            VStack(spacing: 6) {
+                Text("无法获取状态栏图标")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.primary)
+                
+                Text(errorMessage)
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Button(action: openAccessibilitySettings) {
+                HStack(spacing: 6) {
+                    Image(systemName: "gear")
+                        .font(.system(size: 12, weight: .medium))
+                    Text("打开系统设置")
+                        .font(.system(size: 13, weight: .medium))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.accentColor.opacity(0.1))
+                .foregroundColor(.accentColor)
+                .cornerRadius(6)
+            }
+            .buttonStyle(.plain)
+            
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+    }
+    
+    // MARK: - Empty State Section
+    
+    private var emptyStateSection: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            
+            ZStack {
+                Circle()
+                    .fill(Color.secondary.opacity(0.1))
+                    .frame(width: 48, height: 48)
+                
+                Image(systemName: "menubar.rectangle")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.secondary)
+            }
+            
+            VStack(spacing: 6) {
+                Text("暂无图标")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.primary)
+                
+                Text("点击刷新按钮获取状态栏图标")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+    }
+    
+    // MARK: - Icon List Section
+    
+    private var iconListSection: some View {
+        ScrollView {
+            LazyVStack(spacing: 2) {
+                ForEach(icons) { icon in
+                    IconRow(
+                        title: icon.title,
+                        sfSymbol: icon.sfSymbol,
+                        appName: icon.appName
+                    ) {
+                        clickIcon(at: icon.index)
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .frame(maxHeight: 320)
+    }
+    
+    // MARK: - Footer Section
+    
+    private var footerSection: some View {
+        HStack {
+            Image(systemName: "cursorarrow.click.2")
+                .font(.system(size: 11))
+                .foregroundColor(.tertiaryLabel)
+            Text("点击图标触发对应操作")
+                .font(.system(size: 11))
+                .foregroundColor(.tertiaryLabel)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+    
+    // MARK: - Actions
     
     private func discoverIcons() {
         showError = false
@@ -81,10 +192,10 @@ struct MenuBarPopoverView: View {
         
         let service = IconDiscoveryService.shared
         let discovered = service.discoverStatusBarIcons()
-        icons = discovered.enumerated().map { 
+        icons = discovered.enumerated().map {
             IconItem(
-                title: $0.element.displayTitle, 
-                index: $0.offset, 
+                title: $0.element.displayTitle,
+                index: $0.offset,
                 sfSymbol: $0.element.sfSymbol,
                 appName: $0.element.appName
             )
@@ -110,42 +221,82 @@ struct MenuBarPopoverView: View {
     }
 }
 
+// MARK: - Icon Row
+
 struct IconRow: View {
     let title: String
     let sfSymbol: String?
     let appName: String
     let onClick: () -> Void
     
+    @State private var isHovered = false
+    @State private var isPressed = false
+    
     var body: some View {
         Button(action: onClick) {
-            HStack {
-                if let symbol = sfSymbol {
-                    Image(systemName: symbol)
-                        .font(.title2)
-                        .foregroundColor(.primary)
-                        .frame(width: 22, height: 22)
-                } else {
-                    Text(String(appName.prefix(1)))
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .frame(width: 22, height: 22)
-                        .background(Color.blue)
-                        .cornerRadius(4)
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor.opacity(isHovered ? 0.15 : 0.1))
+                        .frame(width: 36, height: 36)
+                    
+                    if let symbol = sfSymbol {
+                        Image(systemName: symbol)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.accentColor)
+                    } else {
+                        Text(String(appName.prefix(1)).uppercased())
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.accentColor)
+                    }
                 }
                 
-                Text(title)
-                    .foregroundColor(.primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    
+                    if !appName.isEmpty {
+                        Text(appName)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
+                }
                 
                 Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.tertiaryLabel)
+                    .opacity(isHovered ? 1 : 0)
             }
-            .padding(.vertical, 8)
             .padding(.horizontal, 12)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isPressed ? Color.primary.opacity(0.1) : 
+                          isHovered ? Color.primary.opacity(0.05) : 
+                          Color.clear)
+            )
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
     }
 }
 
+// MARK: - Color Extensions
 
+private extension Color {
+    static let tertiaryLabel = Color(NSColor.tertiaryLabelColor)
+}
