@@ -1,6 +1,5 @@
 import AppKit
 import SwiftUI
-import ServiceManagement
 
 class StatusBarController: NSObject {
     private var statusItem: NSStatusItem?
@@ -112,20 +111,6 @@ class StatusBarController: NSObject {
         )
         settingsWindow = nil
         NSApp.setActivationPolicy(.accessory)
-    }
-
-    private func toggleLaunchAtLogin(_ enabled: Bool) {
-        if #available(macOS 13.0, *) {
-            do {
-                if enabled {
-                    try SMAppService.mainApp.register()
-                } else {
-                    try SMAppService.mainApp.unregister()
-                }
-            } catch {
-                print("Failed to toggle launch at login: \(error)")
-            }
-        }
     }
 
     @objc func quitApp() {

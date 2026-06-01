@@ -21,13 +21,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         
-        requestScreenRecordingPermission()
         statusBarController = StatusBarController()
-    }
-    
-    private func requestScreenRecordingPermission() {
-        if !CGPreflightScreenCaptureAccess() {
-            CGRequestScreenCaptureAccess()
-        }
     }
 }
