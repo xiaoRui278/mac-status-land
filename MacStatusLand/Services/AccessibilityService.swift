@@ -32,6 +32,8 @@ class AccessibilityService {
                 continue
             }
             
+            let appIcon = app.icon
+            
             let pid = app.processIdentifier
             let appRef = AXUIElementCreateApplication(pid)
             
@@ -44,7 +46,7 @@ class AccessibilityService {
             }
             
             let menuBar = extrasElement as! AXUIElement
-            let icons = extractIcons(from: menuBar, appName: appName)
+            let icons = extractIcons(from: menuBar, appName: appName, appIcon: appIcon)
             if !icons.isEmpty {
                 print("  \(appName): \(icons.count) icons")
                 allIcons.append(contentsOf: icons)
@@ -80,7 +82,7 @@ class AccessibilityService {
         return nil
     }
     
-    private func extractIcons(from menuBar: AXUIElement, appName: String = "") -> [StatusBarIcon] {
+    private func extractIcons(from menuBar: AXUIElement, appName: String = "", appIcon: NSImage? = nil) -> [StatusBarIcon] {
         var children: AnyObject?
         let result = AXUIElementCopyAttributeValue(menuBar, kAXChildrenAttribute as CFString, &children)
         
@@ -91,7 +93,7 @@ class AccessibilityService {
         var icons: [StatusBarIcon] = []
         
         for (index, child) in childrenArray.enumerated() {
-            if let icon = parseStatusBarIcon(from: child, at: index, appName: appName) {
+            if let icon = parseStatusBarIcon(from: child, at: index, appName: appName, appIcon: appIcon) {
                 let hasTitle = !(icon.title.isEmpty)
                 let hasDescription = icon.description != nil && !icon.description!.isEmpty
                 let hasIdentifier = icon.identifier != nil && !icon.identifier!.isEmpty
@@ -105,7 +107,7 @@ class AccessibilityService {
         return icons
     }
     
-    private func parseStatusBarIcon(from element: AXUIElement, at index: Int, appName: String = "") -> StatusBarIcon? {
+    private func parseStatusBarIcon(from element: AXUIElement, at index: Int, appName: String = "", appIcon: NSImage? = nil) -> StatusBarIcon? {
         var title: AnyObject?
         AXUIElementCopyAttributeValue(element, kAXTitleAttribute as CFString, &title)
         let titleString = title as? String
@@ -122,8 +124,13 @@ class AccessibilityService {
         var imageRef: AnyObject?
         let imageResult = AXUIElementCopyAttributeValue(element, "AXImage" as CFString, &imageRef)
         if imageResult == .success {
-            let cgImage = imageRef as! CGImage
-            image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+            if let cgImage = imageRef as! CGImage? {
+                image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+            }
+        }
+        
+        if image == nil {
+            image = appIcon
         }
         
         return StatusBarIcon(
