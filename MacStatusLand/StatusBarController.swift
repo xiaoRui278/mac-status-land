@@ -15,7 +15,8 @@ class StatusBarController: NSObject {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         if let button = statusItem?.button {
-            button.title = "›"
+            button.image = NSImage(systemSymbolName: "chevron.right", accessibilityDescription: "MacStatusLand")
+            button.image?.isTemplate = true
             button.action = #selector(togglePopover)
             button.target = self
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
