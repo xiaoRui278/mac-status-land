@@ -183,13 +183,30 @@ struct MenuBarPopoverView: View {
     // MARK: - Footer Section
     
     private var footerSection: some View {
-        HStack {
-            Image(systemName: "cursorarrow.click.2")
-                .font(.system(size: 11))
-                .foregroundColor(.tertiaryLabel)
-            Text("click_hint".localized)
-                .font(.system(size: 11))
-                .foregroundColor(.tertiaryLabel)
+        VStack(spacing: 6) {
+            HStack {
+                Image(systemName: "cursorarrow.click.2")
+                    .font(.system(size: 11))
+                    .foregroundColor(.tertiaryLabel)
+                Text("click_hint".localized)
+                    .font(.system(size: 11))
+                    .foregroundColor(.tertiaryLabel)
+            }
+            
+            Button(action: {
+                if let url = URL(string: "https://github.com/xiaoRui278/mac-status-bar-land") {
+                    NSWorkspace.shared.open(url)
+                }
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: "star")
+                        .font(.system(size: 10))
+                    Text("GitHub")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundColor(.accentColor)
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
