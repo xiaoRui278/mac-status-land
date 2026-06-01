@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject private var settings = SettingsService.shared
-    @State private var language = SettingsService.shared.appLanguage
+    @AppStorage("appLanguage") private var language = "zh"
     
     var body: some View {
         VStack(spacing: 0) {
