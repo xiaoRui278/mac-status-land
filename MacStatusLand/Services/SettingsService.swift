@@ -4,10 +4,18 @@ import SwiftUI
 class SettingsService: ObservableObject {
     static let shared = SettingsService()
     
-    @AppStorage("launchAtLogin") var launchAtLogin: Bool = false
-    @AppStorage("autoRefreshInterval") var autoRefreshInterval: Int = 0
-    @AppStorage("showSystemApps") var showSystemApps: Bool = false
-    @AppStorage("appLanguage") var appLanguage: String = "zh"
+    @AppStorage("launchAtLogin") var launchAtLogin: Bool = false {
+        willSet { objectWillChange.send() }
+    }
+    @AppStorage("autoRefreshInterval") var autoRefreshInterval: Int = 0 {
+        willSet { objectWillChange.send() }
+    }
+    @AppStorage("showSystemApps") var showSystemApps: Bool = false {
+        willSet { objectWillChange.send() }
+    }
+    @AppStorage("appLanguage") var appLanguage: String = "zh" {
+        willSet { objectWillChange.send() }
+    }
     
     private init() {}
     
