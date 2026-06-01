@@ -5,6 +5,7 @@ import ServiceManagement
 class StatusBarController: NSObject {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
+    private var settingsWindow: NSWindow?
 
     override init() {
         super.init()
@@ -71,27 +72,46 @@ class StatusBarController: NSObject {
     }
 
     @objc func openSettings() {
+        if settingsWindow != nil {
+            settingsWindow?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
         NSApp.setActivationPolicy(.regular)
         
-        let settingsWindow = NSWindow(
+        let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 380, height: 400),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
-        settingsWindow.title = "MacStatusLand 设置"
-        settingsWindow.contentView = NSHostingView(rootView: SettingsView())
-        settingsWindow.center()
-        settingsWindow.makeKeyAndOrderFront(nil)
+        window.title = "MacStatusLand 设置"
+        window.contentView = NSHostingView(rootView: SettingsView())
+        window.center()
+        window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         
+        window.isReleasedWhenClosed = false
+        
         NotificationCenter.default.addObserver(
-            forName: NSWindow.willCloseNotification,
-            object: settingsWindow,
-            queue: .main
-        ) { _ in
-            NSApp.setActivationPolicy(.accessory)
-        }
+            self,
+            selector: #selector(settingsWindowWillClose),
+            name: NSWindow.willCloseNotification,
+            object: window
+        )
+        
+        settingsWindow = window
+    }
+    
+    @objc private func settingsWindowWillClose() {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSWindow.willCloseNotification,
+            object: settingsWindow
+        )
+        settingsWindow = nil
+        NSApp.setActivationPolicy(.accessory)
     }
 
     private func toggleLaunchAtLogin(_ enabled: Bool) {
