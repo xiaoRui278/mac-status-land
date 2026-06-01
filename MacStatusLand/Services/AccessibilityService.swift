@@ -90,7 +90,8 @@ class AccessibilityService {
             if let icon = parseStatusBarIcon(from: child, at: index, appName: appName) {
                 let hasTitle = !(icon.title.isEmpty)
                 let hasDescription = icon.description != nil && !icon.description!.isEmpty
-                if hasTitle || hasDescription {
+                let hasIdentifier = icon.identifier != nil && !icon.identifier!.isEmpty
+                if hasTitle || hasDescription || hasIdentifier {
                     icons.append(icon)
                 }
             }
