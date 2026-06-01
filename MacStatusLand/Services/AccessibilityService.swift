@@ -118,13 +118,22 @@ class AccessibilityService {
         AXUIElementCopyAttributeValue(element, "AXIdentifier" as CFString, &identifier)
         let identifierString = identifier as? String
         
+        var image: NSImage?
+        var imageRef: AnyObject?
+        let imageResult = AXUIElementCopyAttributeValue(element, "AXImage" as CFString, &imageRef)
+        if imageResult == .success {
+            let cgImage = imageRef as! CGImage
+            image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+        }
+        
         return StatusBarIcon(
             index: index,
             title: titleString ?? "",
             description: descriptionString ?? titleString,
             element: element,
             identifier: identifierString,
-            appName: appName
+            appName: appName,
+            image: image
         )
     }
     
@@ -156,6 +165,7 @@ struct StatusBarIcon: Identifiable {
     let element: AXUIElement
     let identifier: String?
     let appName: String
+    let image: NSImage?
     
     var displayTitle: String {
         return description ?? title

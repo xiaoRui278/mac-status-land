@@ -6,6 +6,7 @@ struct IconItem: Identifiable {
     let index: Int
     let sfSymbol: String?
     let appName: String
+    let image: NSImage?
 }
 
 struct MenuBarPopoverView: View {
@@ -157,7 +158,8 @@ struct MenuBarPopoverView: View {
                     IconRow(
                         title: icon.title,
                         sfSymbol: icon.sfSymbol,
-                        appName: icon.appName
+                        appName: icon.appName,
+                        image: icon.image
                     ) {
                         clickIcon(at: icon.index)
                     }
@@ -197,7 +199,8 @@ struct MenuBarPopoverView: View {
                 title: $0.element.displayTitle,
                 index: $0.offset,
                 sfSymbol: $0.element.sfSymbol,
-                appName: $0.element.appName
+                appName: $0.element.appName,
+                image: $0.element.image
             )
         }
         
@@ -227,6 +230,7 @@ struct IconRow: View {
     let title: String
     let sfSymbol: String?
     let appName: String
+    let image: NSImage?
     let onClick: () -> Void
     
     @State private var isHovered = false
@@ -240,7 +244,12 @@ struct IconRow: View {
                         .fill(Color.accentColor.opacity(isHovered ? 0.15 : 0.1))
                         .frame(width: 36, height: 36)
                     
-                    if let symbol = sfSymbol {
+                    if let img = image {
+                        Image(nsImage: img)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 20)
+                    } else if let symbol = sfSymbol {
                         Image(systemName: symbol)
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(.accentColor)
