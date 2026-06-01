@@ -11,6 +11,8 @@
 "language" = "Language";
 "off" = "Off";
 "seconds" = "%lld seconds";
+"section_display" = "Display";
+"section_general" = "General";
 
 /* States */
 "no_icons" = "No Icons";

@@ -11,6 +11,8 @@
 "language" = "语言";
 "off" = "关闭";
 "seconds" = "%lld 秒";
+"section_display" = "显示";
+"section_general" = "通用";
 
 /* States */
 "no_icons" = "暂无图标";
