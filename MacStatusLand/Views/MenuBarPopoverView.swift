@@ -261,17 +261,10 @@ struct IconRow: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
+                    Text(appName)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.primary)
                         .lineLimit(1)
-                    
-                    if !appName.isEmpty {
-                        Text(appName)
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
                 }
                 
                 Spacer()
