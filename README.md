@@ -1,8 +1,12 @@
 # Mac Status Land
 
 <p align="center">
+  <img src="images/AppIcon.png" width="100" alt="MacStatusLand Icon">
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Swift-5.9+-orange?logo=swift" alt="Swift">
-  <img src="https://img.shields.io/badge/macOS-12.0+-blue?logo=apple" alt="macOS">
+  <img src="https://img.shields.io/badge/macOS-13.0+-blue?logo=apple" alt="macOS">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
   <img src="https://img.shields.io/badge/AI-Vibe%20Coding-purple" alt="AI Vibe Coding">
 </p>
@@ -18,12 +22,15 @@
 - 🔍 **自动发现** — 自动扫描第三方应用的状态栏图标
 - 🖱️ **一键触发** — 点击图标直接打开原应用界面
 - 🎯 **精准识别** — 显示应用图标和名称
+- ⚙️ **丰富设置** — 开机启动、自动刷新、中英文切换
 - 🌙 **深色模式** — 完美支持 macOS 深色/浅色模式
 
 ## 📸 界面预览
 
 <p align="center">
-  <img src="screenshot.png" width="300" alt="MacStatusLand Screenshot">
+  <img src="images/PopOver.jpg" width="280" alt="PopOver 界面">
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="images/设置.png" width="300" alt="设置界面">
 </p>
 
 ## 🚀 快速开始
@@ -32,21 +39,23 @@
 
 | 要求 | 版本 |
 |------|------|
-| macOS | 12.0 (Monterey) 或更高 |
-| Xcode | 14.0 或更高（仅编译需要） |
+| macOS | 13.0 (Ventura) 或更高 |
 
 ### 安装
 
+#### 方式一：从源码编译
+
 ```bash
-# 克隆仓库
-git clone git@github.com:xiaoRui278/mac-status-bar-land.git
-
-# 进入项目目录
-cd mac-status-bar-land/MacStatusLand
-
-# 运行
+git clone git@github.com:xiaoRui278/mac-status-land.git
+cd mac-status-land/MacStatusLand
 swift run
 ```
+
+#### 方式二：下载 DMG
+
+1. 前往 [Releases](https://github.com/xiaoRui278/mac-status-land/releases) 下载最新版本
+2. 打开 DMG，将 MacStatusLand.app 拖到 Applications
+3. 首次运行需要在 **系统设置 → 隐私与安全性 → 辅助功能** 中授权
 
 ### 权限设置
 
@@ -62,7 +71,7 @@ swift run
 
 1. 启动应用后，菜单栏会显示 `›` 图标
 2. **左键点击** — 显示 Popover 窗口，列出所有第三方应用图标
-3. **右键点击** — 显示退出菜单
+3. **右键点击** — 显示菜单（设置、退出）
 4. **点击图标** — 直接打开对应应用的界面
 
 ### ⚠️ 重要提示
@@ -71,15 +80,29 @@ swift run
 
 > 操作方法：按住 `⌘ Command` 键，用鼠标拖动图标到最右侧位置。
 
+## ⚙️ 设置功能
+
+右键点击状态栏图标 → 设置，可以配置：
+
+| 设置项 | 说明 |
+|--------|------|
+| 开机启动 | 登录时自动启动应用 |
+| 自动刷新 | 定时刷新图标列表（15/30/60 秒） |
+| 显示系统应用 | 是否显示 Apple 系统应用图标 |
+| 语言 | 切换中文/英文界面 |
+
 ## 🏗️ 技术架构
 
 ```
 MacStatusLand/
 ├── Services/
 │   ├── AccessibilityService.swift    # Accessibility API 封装
-│   └── IconDiscoveryService.swift    # 图标发现服务
+│   ├── IconDiscoveryService.swift    # 图标发现服务
+│   ├── SettingsService.swift         # 设置服务
+│   └── StringLocalization.swift      # 本地化支持
 ├── Views/
-│   └── MenuBarPopoverView.swift      # Popover 界面
+│   ├── MenuBarPopoverView.swift      # Popover 界面
+│   └── SettingsView.swift            # 设置界面
 ├── StatusBarController.swift         # 状态栏控制器
 └── MacStatusLandApp.swift            # 应用入口
 ```
@@ -105,6 +128,7 @@ MacStatusLand/
 ### v1.0.0 (2025-06-01)
 - ✅ 初始发布
 - ✅ 支持第三方应用图标发现和点击
+- ✅ 支持设置功能（开机启动、自动刷新、语言切换）
 - ✅ 支持 macOS 深色模式
 - ✅ 使用 Accessibility API 直接触发点击
 
