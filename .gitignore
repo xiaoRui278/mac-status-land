@@ -4,3 +4,7 @@
 .swiftpm/xcode/package.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Build artifacts
+MacStatusLand.app/
+AppIcon.iconset/
