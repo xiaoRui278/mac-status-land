@@ -11,6 +11,10 @@ class StatusBarController: NSObject {
         setupStatusItem()
         setupPopover()
     }
+    
+    deinit {
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+    }
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -35,6 +39,14 @@ class StatusBarController: NSObject {
         popover.contentViewController?.view = hostingView
 
         self.popover = popover
+        
+        // 监听应用失焦
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(appDidDeactivate),
+            name: NSWorkspace.didDeactivateApplicationNotification,
+            object: nil
+        )
     }
 
     @objc func togglePopover() {
@@ -111,6 +123,13 @@ class StatusBarController: NSObject {
         )
         settingsWindow = nil
         NSApp.setActivationPolicy(.accessory)
+    }
+    
+    @objc private func appDidDeactivate() {
+        guard SettingsService.shared.autoCloseOnFocusLoss else { return }
+        if popover?.isShown == true {
+            popover?.performClose(nil)
+        }
     }
 
     @objc func quitApp() {
