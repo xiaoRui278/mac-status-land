@@ -95,23 +95,17 @@ class MenuBarViewModel {
     
     @discardableResult
     func clickIcon(_ icon: IconItem) -> Bool {
-        guard let element = icon.axElement ?? cacheService.getElement(bundleIdentifier: icon.id) else {
-            errorMessage = "无法访问图标"
+        let rawIcons = accessibilityService.getSystemStatusBarIcons()
+        
+        guard let rawIcon = rawIcons.first(where: { 
+            ($0.identifier ?? "unknown.\($0.appName)") == icon.id 
+        }) else {
+            errorMessage = "无法找到图标"
             showError = true
             return false
         }
         
-        let statusBarIcon = StatusBarIcon(
-            index: 0,
-            title: icon.appName,
-            description: nil,
-            element: element,
-            identifier: icon.bundleIdentifier,
-            appName: icon.appName,
-            image: icon.iconImage
-        )
-        
-        let success = accessibilityService.performAction(statusBarIcon)
+        let success = accessibilityService.performAction(rawIcon)
         
         if success {
             if let index = icons.firstIndex(where: { $0.id == icon.id }) {
