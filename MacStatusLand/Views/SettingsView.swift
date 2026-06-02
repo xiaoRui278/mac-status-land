@@ -3,7 +3,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var settings = SettingsService.shared
+    @ObservedObject private var settings = SettingsService.shared
     @State private var loginItemService = LoginItemService.shared
     @State private var touchIDService = TouchIDService.shared
     
@@ -119,6 +119,8 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 450, height: 500)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .alert("添加预设", isPresented: $showAddPreset) {
             TextField("预设名称", text: $newPresetName)
             Button("取消", role: .cancel) { }
