@@ -24,3 +24,24 @@
 /* Context Menu */
 "settings_menu" = "设置";
 "quit_menu" = "退出";
+
+/* V2.0.0 */
+"search_placeholder" = "搜索图标...";
+"launch_at_login" = "开机自启";
+"auto_close_focus_loss" = "失焦自动关闭";
+"show_system_apps" = "显示系统图标";
+"refresh_interval" = "刷新间隔";
+"hotkey_section" = "快捷键";
+"security_section" = "安全";
+"enable_touchid" = "启用 Touch ID 锁定";
+"presets_section" = "预设配置";
+"hidden_icons_section" = "已隐藏图标";
+"add_preset" = "添加预设";
+"restore_icon" = "恢复图标";
+"pinned_label" = "置顶";
+"no_permission" = "无辅助功能权限";
+"no_icons_found" = "未找到状态栏图标";
+"open_settings" = "打开系统设置";
+"refresh" = "刷新";
+"settings" = "设置";
+"quit" = "退出";

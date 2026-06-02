@@ -24,3 +24,24 @@
 /* Context Menu */
 "settings_menu" = "Settings";
 "quit_menu" = "Quit";
+
+/* V2.0.0 */
+"search_placeholder" = "Search icons...";
+"launch_at_login" = "Launch at Login";
+"auto_close_focus_loss" = "Auto-close on Focus Loss";
+"show_system_apps" = "Show System Icons";
+"refresh_interval" = "Refresh Interval";
+"hotkey_section" = "Keyboard Shortcut";
+"security_section" = "Security";
+"enable_touchid" = "Enable Touch ID Lock";
+"presets_section" = "Presets";
+"hidden_icons_section" = "Hidden Icons";
+"add_preset" = "Add Preset";
+"restore_icon" = "Restore Icon";
+"pinned_label" = "Pinned";
+"no_permission" = "No Accessibility Permission";
+"no_icons_found" = "No Status Bar Icons Found";
+"open_settings" = "Open System Settings";
+"refresh" = "Refresh";
+"settings" = "Settings";
+"quit" = "Quit";
