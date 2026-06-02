@@ -113,12 +113,33 @@ struct MenuBarPopoverView: View {
     
     // MARK: - 图标列表
     
+    private var groupedIconSection: some View {
+        ForEach(IconCategory.allCases, id: \.self) { category in
+            let categoryIcons = viewModel.unpinnedIcons.filter { $0.category == category }
+            
+            if !categoryIcons.isEmpty {
+                Section {
+                    ForEach(categoryIcons) { icon in
+                        iconRow(icon)
+                    }
+                } header: {
+                    HStack {
+                        Text(category.displayName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+    }
+    
     private var iconListSection: some View {
         ScrollView {
             LazyVStack(spacing: 4) {
-                ForEach(viewModel.unpinnedIcons) { icon in
-                    iconRow(icon)
-                }
+                groupedIconSection
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)

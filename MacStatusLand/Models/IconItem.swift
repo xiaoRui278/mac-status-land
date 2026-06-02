@@ -73,20 +73,35 @@ enum IconCategory: String, Codable, CaseIterable {
     static func classify(bundleIdentifier: String) -> IconCategory {
         let id = bundleIdentifier.lowercased()
         
+        // 网络类
         if id.hasPrefix("com.apple.network") ||
            id.contains("wifi") ||
            id.contains("bluetooth") ||
-           id.contains("vpn") {
+           id.contains("vpn") ||
+           id.contains("net") {
             return .network
         }
         
+        // 媒体类
         if id.hasPrefix("com.apple.media") ||
            id.contains("music") ||
            id.contains("podcast") ||
-           id.contains("tv") {
+           id.contains("tv") ||
+           id.contains("video") ||
+           id.contains("audio") {
             return .media
         }
         
+        // 工具类
+        if id.contains("calendar") ||
+           id.contains("clock") ||
+           id.contains("calculator") ||
+           id.contains("notes") ||
+           id.contains("reminder") {
+            return .utility
+        }
+        
+        // 系统类
         if id.hasPrefix("com.apple") {
             return .system
         }
