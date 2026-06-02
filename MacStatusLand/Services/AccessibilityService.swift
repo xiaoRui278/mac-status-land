@@ -47,7 +47,11 @@ class AccessibilityService {
                 continue
             }
             
-            let menuBar = extrasElement as! AXUIElement
+            guard CFGetTypeID(extrasElement) == AXUIElementGetTypeID() else {
+                print("⚠️ Invalid AXUIElement type for extrasMenuBar")
+                continue
+            }
+            let menuBar = unsafeBitCast(extrasElement, to: AXUIElement.self)
             let icons = extractIcons(from: menuBar, appName: appName, appIcon: appIcon)
             if !icons.isEmpty {
                 print("  \(appName): \(icons.count) icons")
@@ -125,9 +129,12 @@ class AccessibilityService {
         var image: NSImage?
         var imageRef: AnyObject?
         let imageResult = AXUIElementCopyAttributeValue(element, "AXImage" as CFString, &imageRef)
-        if imageResult == .success, let cgImage = imageRef {
-            let img = cgImage as! CGImage
+        if imageResult == .success, let imageObj = imageRef,
+           CFGetTypeID(imageObj) == CGImage.typeID {
+            let img = unsafeBitCast(imageObj, to: CGImage.self)
             image = NSImage(cgImage: img, size: NSSize(width: img.width, height: img.height))
+        } else if imageResult == .success {
+            print("⚠️ Invalid CGImage type for AXImage attribute")
         }
         
         if image == nil {
