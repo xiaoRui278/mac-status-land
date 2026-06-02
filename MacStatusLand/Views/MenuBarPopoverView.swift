@@ -255,6 +255,11 @@ struct MenuBarPopoverView: View {
                 Text("no_permission".localized())
                     .font(.headline)
                 
+                Text("请在系统设置中删除旧的 MacStatusLand 条目，然后重新添加")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                
                 Button("open_settings".localized()) {
                     if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                         NSWorkspace.shared.open(url)
