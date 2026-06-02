@@ -16,6 +16,13 @@ class AccessibilityService {
     
     // MARK: - System Status Bar Access
     
+    /// 异步发现状态栏图标
+    func discoverStatusBarIcons() async -> [StatusBarIcon] {
+        await Task.detached {
+            self.getSystemStatusBarIcons()
+        }.value
+    }
+    
     func getSystemStatusBarIcons() -> [StatusBarIcon] {
         guard checkAccessibilityPermission() else {
             print("❌ Accessibility permission not granted")
