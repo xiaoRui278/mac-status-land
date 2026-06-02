@@ -5,7 +5,6 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject private var settings = SettingsService.shared
     @State private var loginItemService = LoginItemService.shared
-    @State private var touchIDService = TouchIDService.shared
     
     @State private var showAddPreset = false
     @State private var newPresetName = ""
@@ -46,18 +45,6 @@ struct SettingsView: View {
             // 快捷键
             Section("hotkey_section".localized()) {
                 HotkeyRecorderView(hotkey: $settings.globalHotkey)
-            }
-            
-            // 安全
-            Section("security_section".localized()) {
-                Toggle("enable_touchid".localized(), isOn: $settings.enableTouchIDLock)
-                    .disabled(!touchIDService.isAvailable)
-                
-                if !touchIDService.isAvailable {
-                    Text("Touch ID 不可用")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             }
             
             // 预设管理

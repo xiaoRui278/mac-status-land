@@ -32,8 +32,6 @@
 "show_system_apps" = "显示系统图标";
 "refresh_interval" = "刷新间隔";
 "hotkey_section" = "快捷键";
-"security_section" = "安全";
-"enable_touchid" = "启用 Touch ID 锁定";
 "presets_section" = "预设配置";
 "hidden_icons_section" = "已隐藏图标";
 "add_preset" = "添加预设";

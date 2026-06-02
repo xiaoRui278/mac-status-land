@@ -77,26 +77,6 @@ class StatusBarController: NSObject {
         if event.type == .rightMouseUp {
             showContextMenu()
         } else {
-            // Touch ID 锁定检查（仅在显示时）
-            if SettingsService.shared.enableTouchIDLock && popover?.isShown != true {
-                Task {
-                    do {
-                        let authenticated = try await TouchIDService.shared.authenticate(
-                            reason: "解锁 MacStatusLand"
-                        )
-                        
-                        if authenticated {
-                            await MainActor.run {
-                                showPopover(button: button)
-                            }
-                        }
-                    } catch {
-                        // 认证失败，不显示
-                    }
-                }
-                return
-            }
-            
             showPopover(button: button)
         }
     }

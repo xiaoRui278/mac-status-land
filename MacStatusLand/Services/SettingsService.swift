@@ -82,14 +82,6 @@ class SettingsService: ObservableObject {
         }
     }
     
-    var enableTouchIDLock: Bool {
-        get { settings.enableTouchIDLock }
-        set {
-            settings.enableTouchIDLock = newValue
-            save()
-        }
-    }
-    
     var autoCloseOnFocusLoss: Bool {
         get { settings.autoCloseOnFocusLoss }
         set {

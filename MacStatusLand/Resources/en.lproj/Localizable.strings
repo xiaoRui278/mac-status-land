@@ -32,8 +32,6 @@
 "show_system_apps" = "Show System Icons";
 "refresh_interval" = "Refresh Interval";
 "hotkey_section" = "Keyboard Shortcut";
-"security_section" = "Security";
-"enable_touchid" = "Enable Touch ID Lock";
 "presets_section" = "Presets";
 "hidden_icons_section" = "Hidden Icons";
 "add_preset" = "Add Preset";

@@ -29,9 +29,6 @@ struct AppSettings: Codable {
     /// 全局快捷键配置
     var globalHotkey: HotkeyConfig?
     
-    /// 启用 Touch ID 锁定
-    var enableTouchIDLock: Bool = false
-    
     /// 失焦自动关闭
     var autoCloseOnFocusLoss: Bool = true
 }
