@@ -1,158 +1,177 @@
+// MacStatusLand/MacStatusLand/Views/SettingsView.swift
+
 import SwiftUI
 
 struct SettingsView: View {
-    @ObservedObject private var settings = SettingsService.shared
-    @AppStorage("appLanguage") private var language = "zh"
+    @State private var settings = SettingsService.shared
+    @State private var loginItemService = LoginItemService.shared
+    @State private var touchIDService = TouchIDService.shared
+    
+    @State private var showAddPreset = false
+    @State private var newPresetName = ""
     
     var body: some View {
-        VStack(spacing: 0) {
-            headerSection
+        Form {
+            // 通用设置
+            Section("general_section".localized()) {
+                Toggle("launch_at_login".localized(), isOn: Binding(
+                    get: { settings.launchAtLogin },
+                    set: { newValue in
+                        settings.launchAtLogin = newValue
+                        do {
+                            if newValue {
+                                try loginItemService.enable()
+                            } else {
+                                try loginItemService.disable()
+                            }
+                        } catch {
+                            // 回滚
+                            settings.launchAtLogin = !newValue
+                        }
+                    }
+                ))
+                
+                Toggle("auto_close_focus_loss".localized(), isOn: $settings.autoCloseOnFocusLoss)
+                
+                Toggle("show_system_apps".localized(), isOn: $settings.showSystemApps)
+                
+                Picker("refresh_interval".localized(), selection: $settings.autoRefreshInterval) {
+                    Text("15 秒").tag(15)
+                    Text("30 秒").tag(30)
+                    Text("60 秒").tag(60)
+                    Text("120 秒").tag(120)
+                }
+            }
             
-            Divider()
-                .padding(.horizontal, 16)
+            // 快捷键
+            Section("hotkey_section".localized()) {
+                HotkeyRecorderView(hotkey: $settings.globalHotkey)
+            }
             
-            Form {
-                Section {
-                    settingsToggle(
-                        isOn: $settings.launchAtLogin,
-                        icon: "power",
-                        iconColor: .green,
-                        title: "launch_at_login".localized(language)
-                    )
-                    .onChange(of: settings.launchAtLogin) { newValue in
-                        toggleLaunchAtLogin(newValue)
+            // 安全
+            Section("security_section".localized()) {
+                Toggle("enable_touchid".localized(), isOn: $settings.enableTouchIDLock)
+                    .disabled(!touchIDService.isAvailable)
+                
+                if !touchIDService.isAvailable {
+                    Text("Touch ID 不可用")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            // 预设管理
+            Section("presets_section".localized()) {
+                ForEach(settings.presets) { preset in
+                    HStack {
+                        Text(preset.name)
+                        
+                        Spacer()
+                        
+                        Text("\(preset.visibleIcons.count) 个图标")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        Button(action: { deletePreset(preset) }) {
+                            Image(systemName: "trash")
+                                .foregroundStyle(.red)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 
-                Section("section_display".localized(language)) {
-                    settingsPicker(
-                        selection: $settings.autoRefreshInterval,
-                        icon: "arrow.clockwise",
-                        iconColor: .blue,
-                        title: "auto_refresh".localized(language),
-                        options: [
-                            (0, "off".localized(language)),
-                            (15, "seconds".localizedFormat(language, 15)),
-                            (30, "seconds".localizedFormat(language, 30)),
-                            (60, "seconds".localizedFormat(language, 60))
-                        ]
-                    )
-                    
-                    settingsToggle(
-                        isOn: $settings.showSystemApps,
-                        icon: "app.badge",
-                        iconColor: .orange,
-                        title: "show_system_apps".localized(language)
-                    )
+                Button("add_preset".localized()) {
+                    showAddPreset = true
                 }
-                
-                Section("section_general".localized(language)) {
-                    settingsPicker(
-                        selection: $language,
-                        icon: "globe",
-                        iconColor: .purple,
-                        title: "language".localized(language),
-                        options: [
-                            ("zh", "中文"),
-                            ("en", "English")
-                        ]
-                    )
-                    .onChange(of: language) { newValue in
-                        settings.appLanguage = newValue
+            }
+            
+            // 已隐藏图标
+            Section("hidden_icons_section".localized()) {
+                if settings.hiddenIcons.isEmpty {
+                    Text("无隐藏图标")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(Array(settings.hiddenIcons), id: \.self) { bundleId in
+                        HStack {
+                            Text(bundleId)
+                                .font(.caption)
+                                .lineLimit(1)
+                            
+                            Spacer()
+                            
+                            Button("restore_icon".localized()) {
+                                settings.hiddenIcons.remove(bundleId)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
                     }
                 }
             }
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
+            
+            // 语言
+            Section("language_section".localized()) {
+                Picker("app_language".localized(), selection: $settings.appLanguage) {
+                    Text("简体中文").tag("zh")
+                    Text("English").tag("en")
+                }
+            }
         }
-        .frame(width: 400, height: 420)
-        .background(Color(NSColor.windowBackgroundColor))
+        .formStyle(.grouped)
+        .frame(width: 450, height: 500)
+        .alert("添加预设", isPresented: $showAddPreset) {
+            TextField("预设名称", text: $newPresetName)
+            Button("取消", role: .cancel) { }
+            Button("添加") {
+                addPreset()
+            }
+        }
     }
     
-    // MARK: - Header
+    // MARK: - 预设管理
     
-    private var headerSection: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "gearshape.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(.white)
-                .frame(width: 36, height: 36)
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.accentColor)
-                )
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("settings".localized(language))
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.primary)
-                
-                Text("settings_description".localized(language))
-                    .font(.system(size: 12))
+    private func addPreset() {
+        guard !newPresetName.isEmpty else { return }
+        let preset = IconPreset(name: newPresetName, visibleIcons: [])
+        settings.presets.append(preset)
+        newPresetName = ""
+    }
+    
+    private func deletePreset(_ preset: IconPreset) {
+        settings.presets.removeAll { $0.id == preset.id }
+    }
+}
+
+/// 快捷键录制视图
+struct HotkeyRecorderView: View {
+    @Binding var hotkey: HotkeyConfig?
+    @State private var isRecording = false
+    
+    var body: some View {
+        HStack {
+            if let hotkey = hotkey {
+                Text(hotkey.displayName)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 4))
+            } else {
+                Text("未设置")
                     .foregroundStyle(.secondary)
             }
             
             Spacer()
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
-    }
-    
-    // MARK: - Reusable Components
-    
-    private func settingsToggle(
-        isOn: Binding<Bool>,
-        icon: String,
-        iconColor: Color,
-        title: String
-    ) -> some View {
-        Toggle(isOn: isOn) {
-            Label {
-                Text(title)
-            } icon: {
-                settingsIcon(name: icon, color: iconColor)
+            
+            Button(isRecording ? "按下快捷键..." : "录制") {
+                isRecording.toggle()
+            }
+            .buttonStyle(.bordered)
+            
+            if hotkey != nil {
+                Button("清除") {
+                    hotkey = nil
+                }
+                .buttonStyle(.bordered)
             }
         }
     }
-    
-    private func settingsPicker<T: Hashable>(
-        selection: Binding<T>,
-        icon: String,
-        iconColor: Color,
-        title: String,
-        options: [(T, String)]
-    ) -> some View {
-        Picker(selection: selection) {
-            ForEach(options, id: \.0) { value, label in
-                Text(label).tag(value)
-            }
-        } label: {
-            Label {
-                Text(title)
-            } icon: {
-                settingsIcon(name: icon, color: iconColor)
-            }
-        }
-        .pickerStyle(.menu)
-    }
-    
-    private func settingsIcon(name: String, color: Color) -> some View {
-        Image(systemName: name)
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(.white)
-            .frame(width: 22, height: 22)
-            .background(
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(color)
-            )
-    }
-    
-    // MARK: - Actions
-    
-    private func toggleLaunchAtLogin(_ enabled: Bool) {
-    }
-}
-
-#Preview {
-    SettingsView()
 }
