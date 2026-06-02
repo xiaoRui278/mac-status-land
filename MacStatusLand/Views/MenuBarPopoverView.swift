@@ -118,19 +118,17 @@ struct MenuBarPopoverView: View {
             let categoryIcons = viewModel.unpinnedIcons.filter { $0.category == category }
             
             if !categoryIcons.isEmpty {
-                Section {
-                    ForEach(categoryIcons) { icon in
-                        iconRow(icon)
-                    }
-                } header: {
-                    HStack {
-                        Text(category.displayName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
+                HStack {
+                    Text(category.displayName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                
+                ForEach(categoryIcons) { icon in
+                    iconRow(icon)
                 }
             }
         }
