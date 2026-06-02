@@ -20,3 +20,7 @@
 "click_hint" = "点击图标触发对应操作";
 "error_title" = "无法获取状态栏图标";
 "open_settings" = "打开系统设置";
+
+/* Context Menu */
+"settings_menu" = "设置";
+"quit_menu" = "退出";

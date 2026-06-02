@@ -20,3 +20,7 @@
 "click_hint" = "Click icon to trigger action";
 "error_title" = "Cannot Get Icons";
 "open_settings" = "Open System Settings";
+
+/* Context Menu */
+"settings_menu" = "Settings";
+"quit_menu" = "Quit";
