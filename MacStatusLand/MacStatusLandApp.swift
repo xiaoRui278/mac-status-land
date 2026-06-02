@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(macOS 14.0, *)
 @main
 struct MacStatusLandApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -11,6 +12,7 @@ struct MacStatusLandApp: App {
     }
 }
 
+@available(macOS 14.0, *)
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarController: StatusBarController?
     

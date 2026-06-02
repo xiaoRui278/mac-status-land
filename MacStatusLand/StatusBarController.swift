@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 
+@available(macOS 14.0, *)
 class StatusBarController: NSObject {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?

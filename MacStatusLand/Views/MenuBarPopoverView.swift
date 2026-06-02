@@ -1,336 +1,284 @@
 import SwiftUI
 
-struct LegacyIconItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let index: Int
-    let sfSymbol: String?
-    let appName: String
-    let image: NSImage?
-}
-
+@available(macOS 14.0, *)
 struct MenuBarPopoverView: View {
-    @State private var icons: [LegacyIconItem] = []
-    @State private var showError: Bool = false
-    @State private var errorMessage: String = ""
-    @State private var refreshTimer: Timer?
-    @ObservedObject private var settings = SettingsService.shared
+    @State private var viewModel = MenuBarViewModel()
+    @State private var showCheckmark: String?  // 显示成功动画的图标 ID
+    @State private var shakingIcon: String?    // 显示抖动动画的图标 ID
     
     var body: some View {
         VStack(spacing: 0) {
+            // 顶部栏
             headerSection
             
-            if showError {
-                errorSection
-            } else if icons.isEmpty {
+            // 搜索栏
+            searchSection
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            
+            // 置顶图标区
+            if !viewModel.pinnedIcons.isEmpty {
+                pinnedSection
+            }
+            
+            // 图标列表
+            if viewModel.isLoading {
+                loadingSection
+            } else if viewModel.filteredIcons.isEmpty {
                 emptyStateSection
             } else {
                 iconListSection
             }
             
-            Divider()
+            // 底部栏
             footerSection
         }
-        .background(Color(NSColor.windowBackgroundColor))
-        .frame(width: 280)
-        .onAppear {
-            discoverIcons()
-            startRefreshTimer()
-        }
-        .onDisappear {
-            stopRefreshTimer()
-        }
-        .onChange(of: settings.autoRefreshInterval) { _ in
-            startRefreshTimer()
+        .frame(width: 300)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(.white.opacity(0.15), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+        .task {
+            await viewModel.discoverIcons()
         }
     }
     
-    // MARK: - Header Section
+    // MARK: - 顶部栏
     
     private var headerSection: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("status_bar_icon".localized(settings.appLanguage))
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.primary)
-                
-                Text("icons_count".localizedFormat(settings.appLanguage, icons.count))
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-            }
+            Text("MacStatusLand")
+                .font(.headline)
             
             Spacer()
             
-            Button(action: discoverIcons) {
+            Button(action: { Task { await viewModel.refresh() } }) {
                 Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.accentColor)
-                    .frame(width: 28, height: 28)
-                    .background(Color.accentColor.opacity(0.1))
-                    .cornerRadius(6)
+                    .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
+            .disabled(viewModel.isLoading)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
     }
     
-    // MARK: - Error Section
+    // MARK: - 搜索栏
     
-    private var errorSection: some View {
-        VStack(spacing: 12) {
-            Spacer()
+    private var searchSection: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.tertiary)
             
-            ZStack {
-                Circle()
-                    .fill(Color.orange.opacity(0.1))
-                    .frame(width: 48, height: 48)
-                
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(.orange)
-            }
+            TextField("search_placeholder".localized(), text: $viewModel.searchText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
             
-            VStack(spacing: 6) {
-                Text("error_title".localized(settings.appLanguage))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.primary)
-                
-                Text(errorMessage)
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            
-            Button(action: openAccessibilitySettings) {
-                HStack(spacing: 6) {
-                    Image(systemName: "gear")
-                        .font(.system(size: 12, weight: .medium))
-                    Text("open_settings".localized(settings.appLanguage))
-                        .font(.system(size: 13, weight: .medium))
+            if !viewModel.searchText.isEmpty {
+                Button(action: { viewModel.searchText = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Color.accentColor.opacity(0.1))
-                .foregroundColor(.accentColor)
-                .cornerRadius(6)
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            
-            Spacer()
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.white.opacity(0.2), lineWidth: 0.5)
+        )
     }
     
-    // MARK: - Empty State Section
+    // MARK: - 置顶区
     
-    private var emptyStateSection: some View {
-        VStack(spacing: 12) {
-            Spacer()
-            
-            ZStack {
-                Circle()
-                    .fill(Color.secondary.opacity(0.1))
-                    .frame(width: 48, height: 48)
-                
-                Image(systemName: "menubar.rectangle")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(.secondary)
+    private var pinnedSection: some View {
+        VStack(spacing: 4) {
+            ForEach(viewModel.pinnedIcons) { icon in
+                iconRow(icon)
             }
-            
-            VStack(spacing: 6) {
-                Text("no_icons".localized(settings.appLanguage))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.primary)
-                
-                Text("refresh_hint".localized(settings.appLanguage))
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.regularMaterial.opacity(0.8))
+        .overlay(alignment: .bottom) {
+            Divider()
+                .background(.white.opacity(0.15))
+        }
     }
     
-    // MARK: - Icon List Section
+    // MARK: - 图标列表
     
     private var iconListSection: some View {
         ScrollView {
-            LazyVStack(spacing: 2) {
-                ForEach(icons) { icon in
-                    IconRow(
-                        title: icon.title,
-                        sfSymbol: icon.sfSymbol,
-                        appName: icon.appName,
-                        image: icon.image
-                    ) {
-                        clickIcon(at: icon.index)
-                    }
+            LazyVStack(spacing: 4) {
+                ForEach(viewModel.unpinnedIcons) { icon in
+                    iconRow(icon)
                 }
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
         .frame(maxHeight: 320)
     }
     
-    // MARK: - Footer Section
+    // MARK: - 图标行
     
-    private var footerSection: some View {
-        VStack(spacing: 6) {
-            Button(action: {
-                if let url = URL(string: "https://github.com/xiaoRui278/mac-status-land") {
-                    NSWorkspace.shared.open(url)
+    private func iconRow(_ icon: IconItem) -> some View {
+        HStack(spacing: 12) {
+            // 图标
+            Group {
+                if let image = icon.iconImage {
+                    Image(nsImage: image)
+                        .resizable()
+                } else {
+                    Image(systemName: "app.fill")
+                        .foregroundStyle(.secondary)
                 }
-            }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "star")
-                        .font(.system(size: 10))
-                    Text("GitHub")
-                        .font(.system(size: 11, weight: .medium))
-                }
-                .foregroundColor(.accentColor)
             }
-            .buttonStyle(.plain)
+            .frame(width: 24, height: 24)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            
+            // 应用名称
+            VStack(alignment: .leading, spacing: 2) {
+                Text(icon.appName)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+                
+                if icon.isPinned {
+                    Text("pinned_label".localized())
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
+            }
+            
+            Spacer()
+            
+            // 操作指示
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-    }
-    
-    // MARK: - Actions
-    
-    private func discoverIcons() {
-        showError = false
-        errorMessage = ""
-        
-        let service = IconDiscoveryService.shared
-        let discovered = service.discoverStatusBarIcons()
-        icons = discovered.enumerated().map {
-            LegacyIconItem(
-                title: $0.element.displayTitle,
-                index: $0.offset,
-                sfSymbol: $0.element.sfSymbol,
-                appName: $0.element.appName,
-                image: $0.element.image
-            )
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.white.opacity(0.1), lineWidth: 0.5)
+        )
+        .overlay {
+            if showCheckmark == icon.id {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.title2)
+                    .transition(.scale.combined(with: .opacity))
+            }
         }
-        
-        if icons.isEmpty {
-            showError = true
-            errorMessage = "refresh_hint".localized(settings.appLanguage)
-        }
-    }
-    
-    private func clickIcon(at index: Int) {
-        let service = IconDiscoveryService.shared
-        let allIcons = service.discoverStatusBarIcons()
-        if index < allIcons.count {
-            _ = service.performAction(allIcons[index])
-        }
-    }
-    
-    private func openAccessibilitySettings() {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-        NSWorkspace.shared.open(url)
-    }
-    
-    // MARK: - Timer
-    
-    private func startRefreshTimer() {
-        stopRefreshTimer()
-        guard settings.autoRefreshInterval > 0 else { return }
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(settings.autoRefreshInterval), repeats: true) { _ in
-            discoverIcons()
-        }
-    }
-    
-    private func stopRefreshTimer() {
-        refreshTimer?.invalidate()
-        refreshTimer = nil
-    }
-}
-
-// MARK: - Icon Row
-
-struct IconRow: View {
-    let title: String
-    let sfSymbol: String?
-    let appName: String
-    let image: NSImage?
-    let onClick: () -> Void
-    
-    @State private var isHovered = false
-    @State private var isPressed = false
-    
-    var body: some View {
-        Button(action: onClick) {
-            HStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .fill(Color.accentColor.opacity(isHovered ? 0.15 : 0.1))
-                        .frame(width: 36, height: 36)
-                    
-                    if let img = image {
-                        Image(nsImage: img)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 20, height: 20)
-                    } else if let symbol = sfSymbol {
-                        Image(systemName: symbol)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.accentColor)
-                    } else {
-                        Text(String(appName.prefix(1)).uppercased())
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.accentColor)
+        .offset(x: shakingIcon == icon.id ? 5 : 0)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            let success = viewModel.clickIcon(icon)
+            withAnimation(.easeInOut(duration: 0.3)) {
+                if success {
+                    showCheckmark = icon.id
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        withAnimation { showCheckmark = nil }
+                    }
+                } else {
+                    shakingIcon = icon.id
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        shakingIcon = nil
                     }
                 }
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(appName)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.tertiaryLabel)
-                    .opacity(isHovered ? 1 : 0)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isPressed ? Color.primary.opacity(0.1) : 
-                          isHovered ? Color.primary.opacity(0.05) : 
-                          Color.clear)
-            )
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
             }
         }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
-        )
+        .contextMenu {
+            Button(action: { viewModel.togglePin(icon) }) {
+                Label(
+                    icon.isPinned ? "取消置顶" : "置顶",
+                    systemImage: icon.isPinned ? "pin.slash" : "pin"
+                )
+            }
+            
+            Button(action: { viewModel.hideIcon(icon) }) {
+                Label("隐藏", systemImage: "eye.slash")
+            }
+        }
     }
-}
-
-// MARK: - Color Extensions
-
-private extension Color {
-    static let tertiaryLabel = Color(NSColor.tertiaryLabelColor)
+    
+    // MARK: - 加载中
+    
+    private var loadingSection: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .progressViewStyle(.circular)
+            
+            Text("正在发现图标...")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxHeight: 200)
+    }
+    
+    // MARK: - 空状态
+    
+    private var emptyStateSection: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "menubar.rectangle")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            
+            if viewModel.showError {
+                Text("no_permission".localized())
+                    .font(.headline)
+                
+                Button("open_settings".localized()) {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .buttonStyle(.bordered)
+            } else {
+                Text("no_icons_found".localized())
+                    .font(.headline)
+                
+                Text("请确保有第三方应用在运行")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxHeight: 200)
+        .padding()
+    }
+    
+    // MARK: - 底部栏
+    
+    private var footerSection: some View {
+        HStack {
+            Button(action: { Task { await viewModel.refresh() } }) {
+                Label("refresh".localized(), systemImage: "arrow.clockwise")
+                    .font(.caption)
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.isLoading)
+            
+            Spacer()
+            
+            Text("GitHub")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .onTapGesture {
+                    if let url = URL(string: "https://github.com/xiaoRui278/mac-status-land") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(.regularMaterial.opacity(0.5))
+    }
 }
