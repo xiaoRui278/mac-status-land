@@ -32,6 +32,9 @@
 "show_system_apps" = "显示系统图标";
 "refresh_interval" = "刷新间隔";
 "hotkey_section" = "快捷键";
+"general_section" = "通用设置";
+"language_section" = "语言设置";
+"app_language" = "应用语言";
 "presets_section" = "预设配置";
 "hidden_icons_section" = "已隐藏图标";
 "add_preset" = "添加预设";

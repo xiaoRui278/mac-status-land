@@ -32,6 +32,9 @@
 "show_system_apps" = "Show System Icons";
 "refresh_interval" = "Refresh Interval";
 "hotkey_section" = "Keyboard Shortcut";
+"general_section" = "General Settings";
+"language_section" = "Language Settings";
+"app_language" = "App Language";
 "presets_section" = "Presets";
 "hidden_icons_section" = "Hidden Icons";
 "add_preset" = "Add Preset";
