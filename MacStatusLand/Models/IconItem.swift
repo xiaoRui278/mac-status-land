@@ -1,0 +1,96 @@
+// MacStatusLand/MacStatusLand/Models/IconItem.swift
+
+import Foundation
+import AppKit
+
+/// 图标数据模型
+struct IconItem: Identifiable, Codable, Equatable {
+    /// 唯一标识 (bundleIdentifier)
+    let id: String
+    
+    /// 应用名称
+    let appName: String
+    
+    /// Bundle Identifier
+    let bundleIdentifier: String
+    
+    /// 是否置顶
+    var isPinned: Bool = false
+    
+    /// 是否隐藏
+    var isHidden: Bool = false
+    
+    /// 最后使用时间
+    var lastUsed: Date?
+    
+    /// 图标分类
+    var category: IconCategory = .thirdParty
+    
+    // MARK: - 运行时属性（不序列化）
+    
+    /// 缓存的 AXUIElement 引用
+    var axElement: AXUIElement?
+    
+    /// 缓存的图标图像
+    var iconImage: NSImage?
+    
+    // MARK: - Codable
+    
+    enum CodingKeys: String, CodingKey {
+        case id, appName, bundleIdentifier, isPinned, isHidden, lastUsed, category
+    }
+    
+    // MARK: - Equatable
+    
+    static func == (lhs: IconItem, rhs: IconItem) -> Bool {
+        lhs.id == rhs.id &&
+        lhs.appName == rhs.appName &&
+        lhs.bundleIdentifier == rhs.bundleIdentifier &&
+        lhs.isPinned == rhs.isPinned &&
+        lhs.isHidden == rhs.isHidden
+    }
+}
+
+/// 图标分类
+enum IconCategory: String, Codable, CaseIterable {
+    case system
+    case thirdParty
+    case network
+    case media
+    case utility
+    
+    var displayName: String {
+        switch self {
+        case .system: return "系统"
+        case .thirdParty: return "第三方"
+        case .network: return "网络"
+        case .media: return "媒体"
+        case .utility: return "工具"
+        }
+    }
+    
+    /// 根据 bundleIdentifier 自动分类
+    static func classify(bundleIdentifier: String) -> IconCategory {
+        let id = bundleIdentifier.lowercased()
+        
+        if id.hasPrefix("com.apple.network") ||
+           id.contains("wifi") ||
+           id.contains("bluetooth") ||
+           id.contains("vpn") {
+            return .network
+        }
+        
+        if id.hasPrefix("com.apple.media") ||
+           id.contains("music") ||
+           id.contains("podcast") ||
+           id.contains("tv") {
+            return .media
+        }
+        
+        if id.hasPrefix("com.apple") {
+            return .system
+        }
+        
+        return .thirdParty
+    }
+}

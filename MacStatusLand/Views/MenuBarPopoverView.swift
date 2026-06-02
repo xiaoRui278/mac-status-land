@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct IconItem: Identifiable {
+struct LegacyIconItem: Identifiable {
     let id = UUID()
     let title: String
     let index: Int
@@ -10,7 +10,7 @@ struct IconItem: Identifiable {
 }
 
 struct MenuBarPopoverView: View {
-    @State private var icons: [IconItem] = []
+    @State private var icons: [LegacyIconItem] = []
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
     @State private var refreshTimer: Timer?
@@ -212,7 +212,7 @@ struct MenuBarPopoverView: View {
         let service = IconDiscoveryService.shared
         let discovered = service.discoverStatusBarIcons()
         icons = discovered.enumerated().map {
-            IconItem(
+            LegacyIconItem(
                 title: $0.element.displayTitle,
                 index: $0.offset,
                 sfSymbol: $0.element.sfSymbol,
