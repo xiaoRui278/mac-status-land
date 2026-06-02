@@ -48,6 +48,26 @@ class StatusBarController: NSObject {
             name: NSWorkspace.didDeactivateApplicationNotification,
             object: nil
         )
+        
+        // 注册全局快捷键
+        if let hotkey = SettingsService.shared.globalHotkey {
+            HotkeyService.shared.register(
+                keyCode: hotkey.keyCode,
+                modifiers: hotkey.modifierFlags
+            ) { [weak self] in
+                DispatchQueue.main.async {
+                    self?.togglePopover()
+                }
+            }
+        }
+        
+        // 监听快捷键设置变化
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(hotkeyDidChange),
+            name: .hotkeyDidChange,
+            object: nil
+        )
     }
 
     @objc func togglePopover() {
@@ -156,8 +176,27 @@ class StatusBarController: NSObject {
             popover?.performClose(nil)
         }
     }
+    
+    @objc private func hotkeyDidChange() {
+        if let hotkey = SettingsService.shared.globalHotkey {
+            HotkeyService.shared.register(
+                keyCode: hotkey.keyCode,
+                modifiers: hotkey.modifierFlags
+            ) { [weak self] in
+                DispatchQueue.main.async {
+                    self?.togglePopover()
+                }
+            }
+        } else {
+            HotkeyService.shared.unregister()
+        }
+    }
 
     @objc func quitApp() {
         NSApp.terminate(nil)
     }
+}
+
+extension Notification.Name {
+    static let hotkeyDidChange = Notification.Name("hotkeyDidChange")
 }
