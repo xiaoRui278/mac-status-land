@@ -5,6 +5,7 @@ struct MenuBarPopoverView: View {
     @State private var viewModel = MenuBarViewModel()
     @State private var showCheckmark: String?  // 显示成功动画的图标 ID
     @State private var shakingIcon: String?    // 显示抖动动画的图标 ID
+    @State private var showQuitAllAlert: Bool = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -44,19 +45,60 @@ struct MenuBarPopoverView: View {
         .task {
             await viewModel.discoverIcons()
         }
+        .alert("quit_all_alert_title".localized(), isPresented: $showQuitAllAlert) {
+            Button("cancel".localized(), role: .cancel) {}
+            Button("quit_all_confirm".localized(), role: .destructive) {
+                viewModel.forceQuitAll()
+            }
+        } message: {
+            Text(quitAllAlertMessage)
+        }
+    }
+
+    /// 弹窗正文：列出前 3 个 app 名称 + 剩余数量
+    private var quitAllAlertMessage: String {
+        let targets = viewModel.quitAllTargets
+        let previewCount = 3
+        let names = targets.prefix(previewCount).map { $0.appName }.joined(separator: "、")
+        if targets.count > previewCount {
+            return "quit_all_alert_message_more".localizedFormat(nil, Int64(targets.count), names)
+        }
+        return "quit_all_alert_message".localizedFormat(nil, Int64(targets.count), names)
     }
     
     // MARK: - 顶部栏
     
     private var headerSection: some View {
-        HStack {
+        HStack(spacing: 8) {
             Text("MacStatusLand")
                 .font(.headline)
-            
+
             Spacer()
-            
+
+            // 全部退出（强制）
+            Button(action: { showQuitAllAlert = true }) {
+                HStack(spacing: 4) {
+                    Image(systemName: "power")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("quit_all_button".localized())
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .foregroundStyle(.red)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.red.opacity(0.12), in: Capsule())
+                .overlay(
+                    Capsule().stroke(.red.opacity(0.3), lineWidth: 0.5)
+                )
+            }
+            .buttonStyle(.plain)
+            .help("quit_all_button".localized())
+            .disabled(viewModel.quitAllTargets.isEmpty)
+            .opacity(viewModel.quitAllTargets.isEmpty ? 0.4 : 1)
+
             Button(action: { Task { await viewModel.refresh() } }) {
                 Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
@@ -218,13 +260,25 @@ struct MenuBarPopoverView: View {
         .contextMenu {
             Button(action: { viewModel.togglePin(icon) }) {
                 Label(
-                    icon.isPinned ? "取消置顶" : "置顶",
+                    (icon.isPinned ? "context_unpin" : "context_pin").localized(),
                     systemImage: icon.isPinned ? "pin.slash" : "pin"
                 )
             }
-            
+
             Button(action: { viewModel.hideIcon(icon) }) {
-                Label("隐藏", systemImage: "eye.slash")
+                Label("context_hide".localized(), systemImage: "eye.slash")
+            }
+
+            if !(icon.appBundleIdentifier ?? "").hasPrefix("com.apple.") {
+                Divider()
+
+                Button(action: { viewModel.quitApp(icon, force: false) }) {
+                    Label("context_quit_app".localized(), systemImage: "power")
+                }
+
+                Button(role: .destructive, action: { viewModel.quitApp(icon, force: true) }) {
+                    Label("context_force_quit_app".localized(), systemImage: "xmark.octagon")
+                }
             }
         }
     }

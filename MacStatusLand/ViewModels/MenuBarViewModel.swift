@@ -68,16 +68,20 @@ class MenuBarViewModel {
                 bundleIdentifier: bundleID,
                 category: IconCategory.classify(bundleIdentifier: bundleID)
             )
-            
+
             item.isPinned = settingsService.pinnedIcons.contains(item.id)
             item.isHidden = settingsService.hiddenIcons.contains(item.id)
-            
+
             item.axElement = raw.element
             if let image = raw.image {
                 item.iconImage = image
                 cacheService.set(element: raw.element, image: image, for: item.id)
             }
-            
+
+            // 记录真实的 app bundle ID + PID，用于退出等操作
+            item.appBundleIdentifier = raw.appBundleIdentifier
+            item.appPID = raw.appPID
+
             return item
         }
         
@@ -142,10 +146,84 @@ class MenuBarViewModel {
     
     func restoreIcon(_ bundleIdentifier: String) {
         settingsService.hiddenIcons.remove(bundleIdentifier)
-        
+
         if let index = icons.firstIndex(where: { $0.id == bundleIdentifier }) {
             icons[index].isHidden = false
         }
+    }
+
+    // MARK: - 退出应用
+
+    /// 退出单个图标对应的 app
+    /// - Parameters:
+    ///   - icon: 目标图标
+    ///   - force: true = forceTerminate（丢弃未保存数据），false = terminate（走 app 自己的退出流程）
+    func quitApp(_ icon: IconItem, force: Bool) {
+        let apps = runningApps(for: icon)
+        // 系统 app 兜底保护
+        let killable = apps.filter { !($0.bundleIdentifier?.hasPrefix("com.apple.") ?? false) }
+        guard !killable.isEmpty else {
+            print("⚠️ quitApp: no killable target for \(icon.appName)")
+            return
+        }
+
+        for app in killable {
+            let ok = force ? app.forceTerminate() : app.terminate()
+            print("\(ok ? "✅" : "❌") \(force ? "forceTerminate" : "terminate") \(app.bundleIdentifier ?? "?") pid=\(app.processIdentifier)")
+        }
+
+        // 延迟刷新，等待 app 真正退出
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            await self?.refresh()
+        }
+    }
+
+    /// 强制退出所有可见的非系统 app
+    /// - Returns: 实际被终止的图标数
+    @discardableResult
+    func forceQuitAll() -> Int {
+        let targets = quitAllTargets
+        var killedCount = 0
+        for icon in targets {
+            let apps = runningApps(for: icon).filter { !($0.bundleIdentifier?.hasPrefix("com.apple.") ?? false) }
+            apps.forEach { $0.forceTerminate() }
+            if !apps.isEmpty { killedCount += 1 }
+        }
+
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            await self?.refresh()
+        }
+
+        return killedCount
+    }
+
+    /// 全部退出的目标集合（用于弹窗预览）
+    var quitAllTargets: [IconItem] {
+        // 按 app bundle ID 去重，同一 app 多个图标只算一个
+        var seen: Set<String> = []
+        var result: [IconItem] = []
+        for icon in icons where !icon.isHidden {
+            let bid = icon.appBundleIdentifier ?? ""
+            if bid.isEmpty || bid.hasPrefix("com.apple.") { continue }
+            if seen.insert(bid).inserted {
+                result.append(icon)
+            }
+        }
+        return result
+    }
+
+    /// 解析图标对应的运行中 app：优先按 bundle ID，兜底按 PID
+    private func runningApps(for icon: IconItem) -> [NSRunningApplication] {
+        if let bid = icon.appBundleIdentifier, !bid.isEmpty {
+            let apps = NSRunningApplication.runningApplications(withBundleIdentifier: bid)
+            if !apps.isEmpty { return apps }
+        }
+        if let pid = icon.appPID, let app = NSRunningApplication(processIdentifier: pid) {
+            return [app]
+        }
+        return []
     }
     
     // MARK: - 排序

@@ -46,3 +46,16 @@
 "refresh" = "刷新";
 "settings" = "设置";
 "quit" = "退出";
+
+/* V2.1.0 - Quit Actions */
+"context_pin" = "置顶";
+"context_unpin" = "取消置顶";
+"context_hide" = "隐藏";
+"context_quit_app" = "退出";
+"context_force_quit_app" = "强制退出";
+"quit_all_button" = "全部退出";
+"quit_all_alert_title" = "强制退出全部应用？";
+"quit_all_alert_message" = "将强制退出 %lld 个应用：%@。未保存的数据可能丢失。";
+"quit_all_alert_message_more" = "将强制退出 %lld 个应用：%@ 等。未保存的数据可能丢失。";
+"quit_all_confirm" = "强制退出";
+"cancel" = "取消";

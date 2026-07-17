@@ -42,24 +42,25 @@ class AccessibilityService {
             }
             
             let appIcon = app.icon
-            
+
             let pid = app.processIdentifier
+            let appBundleID = app.bundleIdentifier
             let appRef = AXUIElementCreateApplication(pid)
-            
+
             // 只获取 AXExtrasMenuBar（状态栏图标）
             var extrasMenuBar: AnyObject?
             let extrasResult = AXUIElementCopyAttributeValue(appRef, "AXExtrasMenuBar" as CFString, &extrasMenuBar)
-            
+
             guard extrasResult == .success, let extrasElement = extrasMenuBar else {
                 continue
             }
-            
+
             guard CFGetTypeID(extrasElement) == AXUIElementGetTypeID() else {
                 print("⚠️ Invalid AXUIElement type for extrasMenuBar")
                 continue
             }
             let menuBar = unsafeBitCast(extrasElement, to: AXUIElement.self)
-            let icons = extractIcons(from: menuBar, appName: appName, appIcon: appIcon)
+            let icons = extractIcons(from: menuBar, appName: appName, appIcon: appIcon, appBundleID: appBundleID, appPID: pid)
             if !icons.isEmpty {
                 print("  \(appName): \(icons.count) icons")
                 allIcons.append(contentsOf: icons)
@@ -95,18 +96,18 @@ class AccessibilityService {
         return nil
     }
     
-    private func extractIcons(from menuBar: AXUIElement, appName: String = "", appIcon: NSImage? = nil) -> [StatusBarIcon] {
+    private func extractIcons(from menuBar: AXUIElement, appName: String = "", appIcon: NSImage? = nil, appBundleID: String? = nil, appPID: pid_t? = nil) -> [StatusBarIcon] {
         var children: AnyObject?
         let result = AXUIElementCopyAttributeValue(menuBar, kAXChildrenAttribute as CFString, &children)
-        
+
         guard result == .success, let childrenArray = children as? [AXUIElement] else {
             return []
         }
-        
+
         var icons: [StatusBarIcon] = []
-        
+
         for (index, child) in childrenArray.enumerated() {
-            if let icon = parseStatusBarIcon(from: child, at: index, appName: appName, appIcon: appIcon) {
+            if let icon = parseStatusBarIcon(from: child, at: index, appName: appName, appIcon: appIcon, appBundleID: appBundleID, appPID: appPID) {
                 let hasTitle = !(icon.title.isEmpty)
                 let hasDescription = icon.description != nil && !icon.description!.isEmpty
                 let hasIdentifier = icon.identifier != nil && !icon.identifier!.isEmpty
@@ -116,11 +117,11 @@ class AccessibilityService {
                 }
             }
         }
-        
+
         return icons
     }
-    
-    private func parseStatusBarIcon(from element: AXUIElement, at index: Int, appName: String = "", appIcon: NSImage? = nil) -> StatusBarIcon? {
+
+    private func parseStatusBarIcon(from element: AXUIElement, at index: Int, appName: String = "", appIcon: NSImage? = nil, appBundleID: String? = nil, appPID: pid_t? = nil) -> StatusBarIcon? {
         var title: AnyObject?
         AXUIElementCopyAttributeValue(element, kAXTitleAttribute as CFString, &title)
         let titleString = title as? String
@@ -155,7 +156,9 @@ class AccessibilityService {
             element: element,
             identifier: identifierString,
             appName: appName,
-            image: image
+            image: image,
+            appBundleIdentifier: appBundleID,
+            appPID: appPID
         )
     }
     
@@ -188,6 +191,10 @@ struct StatusBarIcon: Identifiable {
     let identifier: String?
     let appName: String
     let image: NSImage?
+    /// 拥有此图标的 app 的真实 bundle identifier（用于 terminate 等操作）
+    let appBundleIdentifier: String?
+    /// 拥有此图标的 app 的 PID（bundle ID 缺失时的兜底）
+    let appPID: pid_t?
     
     var displayTitle: String {
         return description ?? title
