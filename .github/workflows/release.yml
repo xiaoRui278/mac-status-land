@@ -1,0 +1,158 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g. 2.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            RAW="${GITHUB_REF_NAME}"
+          else
+            RAW="v${{ inputs.version }}"
+          fi
+          # v2.1.0 -> 2.1.0
+          VERSION="${RAW#v}"
+          echo "raw=${RAW}"       >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building version=${VERSION} (tag=${RAW})"
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Show toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Build release binary
+        run: swift build -c release --arch arm64 --arch x86_64
+
+      - name: Inject version into Info.plist
+        run: |
+          PLIST="MacStatusLand/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.version }}" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.version }}" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Print" "$PLIST" | head -30
+
+      - name: Assemble .app bundle
+        run: |
+          set -eux
+          APP="MacStatusLand.app"
+          rm -rf "$APP"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+
+          # Universal binary (arch specified above -> .build/apple/Products/Release)
+          if [ -f ".build/apple/Products/Release/MacStatusLand" ]; then
+            cp ".build/apple/Products/Release/MacStatusLand" "$APP/Contents/MacOS/"
+          else
+            cp ".build/release/MacStatusLand" "$APP/Contents/MacOS/"
+          fi
+
+          cp MacStatusLand/Info.plist "$APP/Contents/"
+          cp AppIcon.icns "$APP/Contents/Resources/"
+
+          # Locate SPM resource bundle and copy lproj dirs flat into Resources
+          BUNDLE_DIR="$(find .build -type d -name 'MacStatusLand_MacStatusLand.bundle' | head -n1)"
+          echo "resource bundle: $BUNDLE_DIR"
+          cp -R "$BUNDLE_DIR/en.lproj" "$APP/Contents/Resources/"
+          cp -R "$BUNDLE_DIR/zh.lproj" "$APP/Contents/Resources/"
+
+      - name: Codesign (ad-hoc)
+        run: codesign --force --deep --sign - MacStatusLand.app
+
+      - name: Build DMG
+        run: |
+          set -eux
+          STAGE="/tmp/dmg-stage"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE"
+          cp -R MacStatusLand.app "$STAGE/"
+          ln -s /Applications "$STAGE/Applications"
+
+          DMG_NAME="MacStatusLand-v${{ steps.version.outputs.version }}.dmg"
+          hdiutil create \
+            -volname "MacStatusLand" \
+            -srcfolder "$STAGE" \
+            -ov -format UDZO \
+            "$DMG_NAME"
+
+          shasum -a 256 "$DMG_NAME" | tee dmg.sha256
+          SHA="$(awk '{print $1}' dmg.sha256)"
+          echo "sha256=${SHA}"   >> "$GITHUB_OUTPUT"
+          echo "dmg_name=${DMG_NAME}" >> "$GITHUB_OUTPUT"
+        id: dmg
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.raw }}
+          name: MacStatusLand ${{ steps.version.outputs.raw }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## Install
+
+            **Homebrew**
+            ```bash
+            brew install xiaoRui278/tap/macstatusland
+            ```
+
+            **DMG**
+            Download `${{ steps.dmg.outputs.dmg_name }}` below and drag `MacStatusLand.app` into `Applications`.
+
+            **SHA256**
+            ```
+            ${{ steps.dmg.outputs.sha256 }}
+            ```
+          files: |
+            ${{ steps.dmg.outputs.dmg_name }}
+
+      - name: Update Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA256: ${{ steps.dmg.outputs.sha256 }}
+        run: |
+          set -eux
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/xiaoRui278/homebrew-tap.git" tap
+          cd tap
+
+          CASK="Casks/macstatusland.rb"
+          # macOS sed inline edit
+          sed -i '' -E "s/^([[:space:]]*version[[:space:]]+)\".*\"/\1\"${VERSION}\"/" "$CASK"
+          sed -i '' -E "s/^([[:space:]]*sha256[[:space:]]+)\".*\"/\1\"${SHA256}\"/" "$CASK"
+
+          echo "--- diff ---"
+          git diff "$CASK" || true
+
+          git config user.name  "xiaoRui278"
+          git config user.email "742397974@qq.com"
+          git add "$CASK"
+          if git diff --cached --quiet; then
+            echo "no changes to commit"
+          else
+            git commit -m "macstatusland ${VERSION}"
+            git push origin HEAD
+          fi
