@@ -46,3 +46,16 @@
 "refresh" = "Refresh";
 "settings" = "Settings";
 "quit" = "Quit";
+
+/* V2.1.0 - Quit Actions */
+"context_pin" = "Pin";
+"context_unpin" = "Unpin";
+"context_hide" = "Hide";
+"context_quit_app" = "Quit";
+"context_force_quit_app" = "Force Quit";
+"quit_all_button" = "Quit All";
+"quit_all_alert_title" = "Force quit all apps?";
+"quit_all_alert_message" = "Force quit %lld apps: %@. Unsaved data may be lost.";
+"quit_all_alert_message_more" = "Force quit %lld apps: %@ and more. Unsaved data may be lost.";
+"quit_all_confirm" = "Force Quit";
+"cancel" = "Cancel";

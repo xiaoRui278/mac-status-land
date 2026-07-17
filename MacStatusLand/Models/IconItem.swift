@@ -25,14 +25,20 @@ struct IconItem: Identifiable, Codable, Equatable {
     
     /// 图标分类
     var category: IconCategory = .thirdParty
-    
+
     // MARK: - 运行时属性（不序列化）
-    
+
     /// 缓存的 AXUIElement 引用
     var axElement: AXUIElement?
-    
+
     /// 缓存的图标图像
     var iconImage: NSImage?
+
+    /// 拥有此图标的 app 的真实 bundle identifier（区别于 `bundleIdentifier` — 后者存的是 AXIdentifier 用作 UI key）
+    var appBundleIdentifier: String?
+
+    /// 拥有此图标的 app 的 PID（bundle ID 缺失时兜底）
+    var appPID: pid_t?
     
     // MARK: - Codable
     
