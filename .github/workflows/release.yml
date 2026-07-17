@@ -75,8 +75,17 @@ jobs:
           # Locate SPM resource bundle and copy lproj dirs flat into Resources
           BUNDLE_DIR="$(find .build -type d -name 'MacStatusLand_MacStatusLand.bundle' | head -n1)"
           echo "resource bundle: $BUNDLE_DIR"
-          cp -R "$BUNDLE_DIR/en.lproj" "$APP/Contents/Resources/"
-          cp -R "$BUNDLE_DIR/zh.lproj" "$APP/Contents/Resources/"
+
+          # Universal build nests lproj under Contents/Resources; single-arch is flat
+          if [ -d "$BUNDLE_DIR/Contents/Resources/en.lproj" ]; then
+            LPROJ_SRC="$BUNDLE_DIR/Contents/Resources"
+          else
+            LPROJ_SRC="$BUNDLE_DIR"
+          fi
+          echo "lproj source: $LPROJ_SRC"
+
+          cp -R "$LPROJ_SRC/en.lproj" "$APP/Contents/Resources/"
+          cp -R "$LPROJ_SRC/zh.lproj" "$APP/Contents/Resources/"
 
       - name: Codesign (ad-hoc)
         run: codesign --force --deep --sign - MacStatusLand.app
