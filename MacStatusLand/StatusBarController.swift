@@ -11,6 +11,18 @@ class StatusBarController: NSObject {
         super.init()
         setupStatusItem()
         setupPopover()
+
+        // Auto-open popover on first launch so user sees app is running
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self = self,
+                  let button = self.statusItem?.button else { return }
+            // Check if this is the first launch (no persisted settings yet)
+            // Always open on fresh launch to help new users discover the app
+            if !SettingsService.shared.hasCompletedFirstLaunch {
+                self.showPopover(button: button)
+                SettingsService.shared.hasCompletedFirstLaunch = true
+            }
+        }
     }
     
     deinit {
@@ -71,14 +83,16 @@ class StatusBarController: NSObject {
     }
 
     @objc func togglePopover() {
-        guard let button = statusItem?.button,
-              let event = NSApp.currentEvent else { return }
-        
-        if event.type == .rightMouseUp {
+        guard let button = statusItem?.button else { return }
+
+        // Check for right click if event available
+        if let event = NSApp.currentEvent, event.type == .rightMouseUp {
             showContextMenu()
-        } else {
-            showPopover(button: button)
+            return
         }
+
+        // Default: left click toggles popover
+        showPopover(button: button)
     }
     
     private func showPopover(button: NSStatusBarButton) {

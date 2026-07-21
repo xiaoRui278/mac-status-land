@@ -31,6 +31,9 @@ struct AppSettings: Codable {
     
     /// 失焦自动关闭
     var autoCloseOnFocusLoss: Bool = true
+
+    /// Whether user has completed first launch (seen popover)
+    var hasCompletedFirstLaunch: Bool = false
 }
 
 /// 快捷键配置

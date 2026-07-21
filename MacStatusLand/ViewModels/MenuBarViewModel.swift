@@ -9,12 +9,16 @@ import AppKit
 @Observable
 class MenuBarViewModel {
     // MARK: - 状态
-    
+
     var icons: [IconItem] = []
     var searchText: String = ""
     var isLoading: Bool = false
     var errorMessage: String?
     var showError: Bool = false
+    var hoveredIconId: String?
+    var hoveredHeaderId: String?
+    var hoveredFooterId: String?
+    var hoveredSearchClear: Bool = false
     
     // MARK: - 服务依赖
     
@@ -61,15 +65,19 @@ class MenuBarViewModel {
         let rawIcons = accessibilityService.getSystemStatusBarIcons()
 
         var items: [IconItem] = []
-        for (index, raw) in rawIcons.enumerated() {
-            // 每个图标唯一 id：bundleId + 原始索引，保证同一个 app 多个图标 id 不重复
-            let bundleID = raw.identifier ?? "unknown.\(raw.appName)"
-            let uniqueID = "\(bundleID)_\(index)"
+        for raw in rawIcons {
+            // 每个图标唯一 id：
+            // - 如果有 identifier: 使用 identifier + appBundleID 保证唯一性
+            // - 如果没有 identifier: 使用 description/title + appName
+            let baseId = raw.identifier ?? raw.displayTitle
+            let bundlePart = raw.appBundleIdentifier ?? "unknown"
+            let uniqueID = "\(bundlePart)_\(baseId)"
+
             var item = IconItem(
                 id: uniqueID,
                 appName: raw.appName,
-                bundleIdentifier: bundleID,
-                category: IconCategory.classify(bundleIdentifier: bundleID)
+                bundleIdentifier: baseId,
+                category: IconCategory.classify(bundleIdentifier: bundlePart)
             )
 
             item.isPinned = settingsService.pinnedIcons.contains(item.id)
@@ -112,28 +120,38 @@ class MenuBarViewModel {
     
     @discardableResult
     func clickIcon(_ icon: IconItem) -> Bool {
+        print("🔍 [MenuBarViewModel] clicking icon: \(icon.appName), id=\(icon.id)")
         let rawIcons = accessibilityService.getSystemStatusBarIcons()
-        
-        guard let rawIcon = rawIcons.first(where: { 
-            ($0.identifier ?? "unknown.\($0.appName)") == icon.id 
-        }) else {
-            errorMessage = "无法找到图标"
-            showError = true
-            return false
-        }
-        
-        let success = accessibilityService.performAction(rawIcon)
-        
-        if success {
-            if let index = icons.firstIndex(where: { $0.id == icon.id }) {
-                icons[index].lastUsed = Date()
+        print("🔍 [MenuBarViewModel] found \(rawIcons.count) total raw icons")
+
+        // Re-generate IDs the same way to match correctly
+        for raw in rawIcons {
+            let baseId = raw.identifier ?? raw.displayTitle
+            let bundlePart = raw.appBundleIdentifier ?? "unknown"
+            let uniqueID = "\(bundlePart)_\(baseId)"
+
+            if uniqueID == icon.id {
+                print("✅ [MenuBarViewModel] found raw icon, performing action...")
+                let success = accessibilityService.performAction(raw)
+                print(success ? "✅ [MenuBarViewModel] click succeeded" : "❌ [MenuBarViewModel] click failed")
+
+                if success {
+                    if let index = icons.firstIndex(where: { $0.id == icon.id }) {
+                        icons[index].lastUsed = Date()
+                    }
+                } else {
+                    errorMessage = "点击失败"
+                    showError = true
+                }
+
+                return success
             }
-        } else {
-            errorMessage = "点击失败"
-            showError = true
         }
-        
-        return success
+
+        print("❌ [MenuBarViewModel] icon not found in fresh scan")
+        errorMessage = "无法找到图标"
+        showError = true
+        return false
     }
     
     func togglePin(_ icon: IconItem) {

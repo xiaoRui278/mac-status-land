@@ -89,7 +89,15 @@ class SettingsService: ObservableObject {
             save()
         }
     }
-    
+
+    var hasCompletedFirstLaunch: Bool {
+        get { settings.hasCompletedFirstLaunch }
+        set {
+            settings.hasCompletedFirstLaunch = newValue
+            save()
+        }
+    }
+
     // MARK: - 保存
     
     private func save() {

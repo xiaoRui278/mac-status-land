@@ -6,6 +6,7 @@ struct MenuBarPopoverView: View {
     @State private var showCheckmark: String?  // 显示成功动画的图标 ID
     @State private var shakingIcon: String?    // 显示抖动动画的图标 ID
     @State private var showQuitAllAlert: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     
     var body: some View {
         VStack(spacing: 0) {
@@ -39,7 +40,7 @@ struct MenuBarPopoverView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(.white.opacity(0.15), lineWidth: 1)
+                .stroke(.secondary.opacity(0.15), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
         .task {
@@ -98,14 +99,34 @@ struct MenuBarPopoverView: View {
             .help("quit_all_button".localized())
             .disabled(viewModel.quitAllTargets.isEmpty)
             .opacity(viewModel.quitAllTargets.isEmpty ? 0.4 : 1)
+            .onHover { isHovered in
+                withAnimation(.easeOut(duration: 0.15)) {
+                    if !accessibilityReduceMotion {
+                        viewModel.hoveredHeaderId = isHovered ? "quit-all" : nil
+                    }
+                }
+            }
+            .scaleEffect(viewModel.hoveredHeaderId == "quit-all" && !accessibilityReduceMotion ? 1.05 : 1.0)
 
             Button(action: { Task { await viewModel.refresh() } }) {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.secondary)
+                    .padding(6)
+                    .background(
+                        viewModel.hoveredHeaderId == "refresh" ? .secondary.opacity(0.1) : Color.clear,
+                        in: Circle()
+                    )
             }
             .buttonStyle(.plain)
             .disabled(viewModel.isLoading)
+            .onHover { isHovered in
+                withAnimation(.easeOut(duration: 0.15)) {
+                    if !accessibilityReduceMotion {
+                        viewModel.hoveredHeaderId = isHovered ? "refresh" : nil
+                    }
+                }
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -126,8 +147,17 @@ struct MenuBarPopoverView: View {
                 Button(action: { viewModel.searchText = "" }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.tertiary)
+                        .padding(4)
                 }
                 .buttonStyle(.plain)
+                .onHover { isHovered in
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        if !accessibilityReduceMotion {
+                            viewModel.hoveredSearchClear = isHovered
+                        }
+                    }
+                }
+                .opacity(viewModel.hoveredSearchClear && !accessibilityReduceMotion ? 0.7 : 1.0)
             }
         }
         .padding(.horizontal, 10)
@@ -135,7 +165,7 @@ struct MenuBarPopoverView: View {
         .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.2), lineWidth: 0.5)
+                .stroke(.secondary.opacity(0.2), lineWidth: 0.5)
         )
     }
     
@@ -152,7 +182,7 @@ struct MenuBarPopoverView: View {
         .background(.regularMaterial.opacity(0.8))
         .overlay(alignment: .bottom) {
             Divider()
-                .background(.white.opacity(0.15))
+                .background(.secondary.opacity(0.15))
         }
     }
     
@@ -206,22 +236,23 @@ struct MenuBarPopoverView: View {
             }
             .frame(width: 24, height: 24)
             .clipShape(RoundedRectangle(cornerRadius: 6))
-            
+
             // 应用名称
             VStack(alignment: .leading, spacing: 2) {
                 Text(icon.appName)
                     .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
-                
+                    .foregroundStyle(.primary)
+
                 if icon.isPinned {
                     Text("pinned_label".localized())
                         .font(.caption2)
                         .foregroundStyle(.orange)
                 }
             }
-            
+
             Spacer()
-            
+
             // 操作指示
             Image(systemName: "chevron.right")
                 .font(.caption)
@@ -232,7 +263,11 @@ struct MenuBarPopoverView: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.1), lineWidth: 0.5)
+                .fill(viewModel.hoveredIconId == icon.id ? .secondary.opacity(0.15) : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.secondary.opacity(0.1), lineWidth: 0.5)
         )
         .overlay {
             if showCheckmark == icon.id {
@@ -244,13 +279,34 @@ struct MenuBarPopoverView: View {
         }
         .offset(x: shakingIcon == icon.id ? 5 : 0)
         .contentShape(Rectangle())
+        .onHover { isHovered in
+            withAnimation(.easeOut(duration: 0.15)) {
+                if !accessibilityReduceMotion {
+                    viewModel.hoveredIconId = isHovered ? icon.id : nil
+                }
+            }
+        }
         .onTapGesture {
             let success = viewModel.clickIcon(icon)
-            withAnimation(.easeInOut(duration: 0.3)) {
+            if !accessibilityReduceMotion {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    if success {
+                        showCheckmark = icon.id
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            withAnimation { showCheckmark = nil }
+                        }
+                    } else {
+                        shakingIcon = icon.id
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            shakingIcon = nil
+                        }
+                    }
+                }
+            } else {
                 if success {
                     showCheckmark = icon.id
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                        withAnimation { showCheckmark = nil }
+                        showCheckmark = nil
                     }
                 } else {
                     shakingIcon = icon.id
@@ -348,10 +404,22 @@ struct MenuBarPopoverView: View {
             .disabled(viewModel.isLoading)
             
             Spacer()
-            
+
             Text("GitHub")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .padding(4)
+                .background(
+                    viewModel.hoveredFooterId == "github" ? .secondary.opacity(0.1) : Color.clear,
+                    in: RoundedRectangle(cornerRadius: 4)
+                )
+                .onHover { isHovered in
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        if !accessibilityReduceMotion {
+                            viewModel.hoveredFooterId = isHovered ? "github" : nil
+                        }
+                    }
+                }
                 .onTapGesture {
                     if let url = URL(string: "https://github.com/xiaoRui278/mac-status-land") {
                         NSWorkspace.shared.open(url)

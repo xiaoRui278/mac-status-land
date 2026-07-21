@@ -5,7 +5,8 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject private var settings = SettingsService.shared
     @State private var loginItemService = LoginItemService.shared
-    
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
+
     @State private var showAddPreset = false
     @State private var newPresetName = ""
     
@@ -52,18 +53,27 @@ struct SettingsView: View {
                 ForEach(settings.presets) { preset in
                     HStack {
                         Text(preset.name)
-                        
+
                         Spacer()
-                        
+
                         Text("\(preset.visibleIcons.count) 个图标")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        
+
                         Button(action: { deletePreset(preset) }) {
                             Image(systemName: "trash")
                                 .foregroundStyle(.red)
+                                .padding(4)
                         }
                         .buttonStyle(.plain)
+                        .onHover { isHovered in
+                            withAnimation(.easeOut(duration: 0.15)) {
+                                if !accessibilityReduceMotion {
+                                    // Simple opacity change on hover
+                                }
+                            }
+                        }
+                        .contentShape(RoundedRectangle(cornerRadius: 4))
                     }
                 }
                 
