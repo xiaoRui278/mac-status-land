@@ -19,10 +19,10 @@ struct IconItem: Identifiable, Codable, Equatable {
     
     /// 是否隐藏
     var isHidden: Bool = false
-    
+
     /// 最后使用时间
     var lastUsed: Date?
-    
+
     /// 图标分类
     var category: IconCategory = .thirdParty
 
@@ -60,58 +60,72 @@ struct IconItem: Identifiable, Codable, Equatable {
 /// 图标分类
 enum IconCategory: String, Codable, CaseIterable {
     case system
-    case thirdParty
     case network
     case media
     case utility
-    
+    case thirdParty
+
     var displayName: String {
         switch self {
-        case .system: return "系统"
-        case .thirdParty: return "第三方"
-        case .network: return "网络"
-        case .media: return "媒体"
-        case .utility: return "工具"
+        case .system: return "category_system".localized()
+        case .network: return "category_network".localized()
+        case .media: return "category_media".localized()
+        case .utility: return "category_utility".localized()
+        case .thirdParty: return "category_third_party".localized()
         }
     }
-    
+
     /// 根据 bundleIdentifier 自动分类
     static func classify(bundleIdentifier: String) -> IconCategory {
         let id = bundleIdentifier.lowercased()
-        
+
         // 网络类
-        if id.hasPrefix("com.apple.network") ||
-           id.contains("wifi") ||
+        if id.contains("wifi") ||
            id.contains("bluetooth") ||
            id.contains("vpn") ||
-           id.contains("net") {
+           id.contains("net") ||
+           id.contains("network") ||
+           id.contains("proxy") ||
+           id.contains("cloud") {
             return .network
         }
-        
+
         // 媒体类
-        if id.hasPrefix("com.apple.media") ||
-           id.contains("music") ||
+        if id.contains("music") ||
+           id.contains("spotify") ||
            id.contains("podcast") ||
            id.contains("tv") ||
            id.contains("video") ||
-           id.contains("audio") {
+           id.contains("audio") ||
+           id.contains("player") ||
+           id.contains("radio") {
             return .media
         }
-        
+
         // 工具类
         if id.contains("calendar") ||
            id.contains("clock") ||
            id.contains("calculator") ||
            id.contains("notes") ||
-           id.contains("reminder") {
+           id.contains("reminder") ||
+           id.contains("todo") ||
+           id.contains("weather") ||
+           id.contains("utils") ||
+           id.contains("utility") ||
+           id.contains("monitor") ||
+           id.contains("stats") ||
+           id.contains("bat") ||
+           id.contains("cpu") ||
+           id.contains("gpu") ||
+           id.contains("memory") {
             return .utility
         }
-        
+
         // 系统类
         if id.hasPrefix("com.apple") {
             return .system
         }
-        
+
         return .thirdParty
     }
 }

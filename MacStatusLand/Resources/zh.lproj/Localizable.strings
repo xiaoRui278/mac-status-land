@@ -59,3 +59,10 @@
 "quit_all_alert_message_more" = "将强制退出 %lld 个应用：%@ 等。未保存的数据可能丢失。";
 "quit_all_confirm" = "强制退出";
 "cancel" = "取消";
+
+/* Categories */
+"category_system" = "系统";
+"category_third_party" = "第三方";
+"category_network" = "网络";
+"category_media" = "媒体";
+"category_utility" = "工具";

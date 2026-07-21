@@ -31,16 +31,30 @@ class AccessibilityService {
         
         var allIcons: [StatusBarIcon] = []
         let apps = NSWorkspace.shared.runningApplications
-        
+        let ownBundleID = Bundle.main.bundleIdentifier
+        let ownAppName = "MacStatusLand"
+
         for app in apps {
             guard let appName = app.localizedName else { continue }
-            
+
+            // 排除自己：bundleID 匹配 或者 名称匹配，都跳过
+            var isSelf = false
+            if let own = ownBundleID, let bundleID = app.bundleIdentifier, bundleID == own {
+                isSelf = true
+            }
+            if appName == ownAppName {
+                isSelf = true
+            }
+            if isSelf {
+                continue
+            }
+
             if !SettingsService.shared.showSystemApps {
                 if let bundleID = app.bundleIdentifier, bundleID.hasPrefix("com.apple.") {
                     continue
                 }
             }
-            
+
             let appIcon = app.icon
 
             let pid = app.processIdentifier
@@ -105,8 +119,13 @@ class AccessibilityService {
         }
 
         var icons: [StatusBarIcon] = []
+        let ownBundleID = Bundle.main.bundleIdentifier
 
         for (index, child) in childrenArray.enumerated() {
+            // 第二层过滤：图标所属 app bundle ID 就是自己也跳过
+            if let appBundleID = appBundleID, appBundleID == ownBundleID {
+                continue
+            }
             if let icon = parseStatusBarIcon(from: child, at: index, appName: appName, appIcon: appIcon, appBundleID: appBundleID, appPID: appPID) {
                 let hasTitle = !(icon.title.isEmpty)
                 let hasDescription = icon.description != nil && !icon.description!.isEmpty

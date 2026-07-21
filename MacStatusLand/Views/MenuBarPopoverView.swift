@@ -45,6 +45,9 @@ struct MenuBarPopoverView: View {
         .task {
             await viewModel.discoverIcons()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .popoverDidOpen)) { _ in
+            Task { await viewModel.refresh() }
+        }
         .alert("quit_all_alert_title".localized(), isPresented: $showQuitAllAlert) {
             Button("cancel".localized(), role: .cancel) {}
             Button("quit_all_confirm".localized(), role: .destructive) {
@@ -158,7 +161,7 @@ struct MenuBarPopoverView: View {
     private var groupedIconSection: some View {
         ForEach(IconCategory.allCases, id: \.self) { category in
             let categoryIcons = viewModel.unpinnedIcons.filter { $0.category == category }
-            
+
             if !categoryIcons.isEmpty {
                 HStack {
                     Text(category.displayName)
@@ -167,9 +170,9 @@ struct MenuBarPopoverView: View {
                     Spacer()
                 }
                 .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-                
-                ForEach(categoryIcons) { icon in
+                .padding(.vertical, 2)
+
+                ForEach(categoryIcons, id: \.id) { icon in
                     iconRow(icon)
                 }
             }
@@ -184,7 +187,7 @@ struct MenuBarPopoverView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
-        .frame(maxHeight: 320)
+        .frame(maxHeight: min(NSScreen.main?.frame.height ?? 480 * 0.4, 320))
     }
     
     // MARK: - 图标行

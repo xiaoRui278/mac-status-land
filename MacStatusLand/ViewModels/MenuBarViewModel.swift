@@ -59,11 +59,14 @@ class MenuBarViewModel {
         defer { isLoading = false }
         
         let rawIcons = accessibilityService.getSystemStatusBarIcons()
-        
-        var items = rawIcons.map { raw -> IconItem in
+
+        var items: [IconItem] = []
+        for (index, raw) in rawIcons.enumerated() {
+            // 每个图标唯一 id：bundleId + 原始索引，保证同一个 app 多个图标 id 不重复
             let bundleID = raw.identifier ?? "unknown.\(raw.appName)"
+            let uniqueID = "\(bundleID)_\(index)"
             var item = IconItem(
-                id: bundleID,
+                id: uniqueID,
                 appName: raw.appName,
                 bundleIdentifier: bundleID,
                 category: IconCategory.classify(bundleIdentifier: bundleID)
@@ -82,16 +85,26 @@ class MenuBarViewModel {
             item.appBundleIdentifier = raw.appBundleIdentifier
             item.appPID = raw.appPID
 
-            return item
+            items.append(item)
         }
-        
+
+        // 最后过滤一遍：排除自身 app
+        let ownBundleID = Bundle.main.bundleIdentifier
+        items = items.filter { item in
+            if let own = ownBundleID, let itemBid = item.appBundleIdentifier, itemBid == own {
+                print("🚫 Filtering out self in VM: \(item.appName) \(itemBid)")
+                return false
+            }
+            return true
+        }
+
         items.sort { lhs, rhs in
             if lhs.isPinned != rhs.isPinned {
                 return lhs.isPinned
             }
             return lhs.appName.localizedCompare(rhs.appName) == .orderedAscending
         }
-        
+
         icons = items
     }
     
@@ -160,8 +173,12 @@ class MenuBarViewModel {
     ///   - force: true = forceTerminate（丢弃未保存数据），false = terminate（走 app 自己的退出流程）
     func quitApp(_ icon: IconItem, force: Bool) {
         let apps = runningApps(for: icon)
-        // 系统 app 兜底保护
-        let killable = apps.filter { !($0.bundleIdentifier?.hasPrefix("com.apple.") ?? false) }
+        // 系统 app + 自身兜底保护
+        let ownBundleID = Bundle.main.bundleIdentifier ?? ""
+        let killable = apps.filter {
+            !($0.bundleIdentifier?.hasPrefix("com.apple.") ?? false) &&
+            $0.bundleIdentifier != ownBundleID
+        }
         guard !killable.isEmpty else {
             print("⚠️ quitApp: no killable target for \(icon.appName)")
             return
@@ -185,8 +202,12 @@ class MenuBarViewModel {
     func forceQuitAll() -> Int {
         let targets = quitAllTargets
         var killedCount = 0
+        let ownBundleID = Bundle.main.bundleIdentifier ?? ""
         for icon in targets {
-            let apps = runningApps(for: icon).filter { !($0.bundleIdentifier?.hasPrefix("com.apple.") ?? false) }
+            let apps = runningApps(for: icon).filter {
+                !($0.bundleIdentifier?.hasPrefix("com.apple.") ?? false) &&
+                $0.bundleIdentifier != ownBundleID
+            }
             apps.forEach { $0.forceTerminate() }
             if !apps.isEmpty { killedCount += 1 }
         }
@@ -204,9 +225,10 @@ class MenuBarViewModel {
         // 按 app bundle ID 去重，同一 app 多个图标只算一个
         var seen: Set<String> = []
         var result: [IconItem] = []
+        let ownBundleID = Bundle.main.bundleIdentifier ?? ""
         for icon in icons where !icon.isHidden {
             let bid = icon.appBundleIdentifier ?? ""
-            if bid.isEmpty || bid.hasPrefix("com.apple.") { continue }
+            if bid.isEmpty || bid.hasPrefix("com.apple.") || bid == ownBundleID { continue }
             if seen.insert(bid).inserted {
                 result.append(icon)
             }

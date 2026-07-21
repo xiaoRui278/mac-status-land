@@ -86,6 +86,8 @@ class StatusBarController: NSObject {
             popover?.performClose(nil)
         } else {
             popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            // 每次打开弹出框都刷新图标，保证最新状态
+            NotificationCenter.default.post(name: .popoverDidOpen, object: nil)
         }
     }
     
@@ -179,4 +181,5 @@ class StatusBarController: NSObject {
 
 extension Notification.Name {
     static let hotkeyDidChange = Notification.Name("hotkeyDidChange")
+    static let popoverDidOpen = Notification.Name("popoverDidOpen")
 }

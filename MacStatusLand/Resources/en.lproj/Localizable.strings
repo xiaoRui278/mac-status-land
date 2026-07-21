@@ -59,3 +59,10 @@
 "quit_all_alert_message_more" = "Force quit %lld apps: %@ and more. Unsaved data may be lost.";
 "quit_all_confirm" = "Force Quit";
 "cancel" = "Cancel";
+
+/* Categories */
+"category_system" = "System";
+"category_third_party" = "Third Party";
+"category_network" = "Network";
+"category_media" = "Media";
+"category_utility" = "Utilities";
