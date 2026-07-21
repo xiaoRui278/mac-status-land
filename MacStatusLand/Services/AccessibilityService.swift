@@ -111,6 +111,8 @@ class AccessibilityService {
     }
     
     private func extractIcons(from menuBar: AXUIElement, appName: String = "", appIcon: NSImage? = nil, appBundleID: String? = nil, appPID: pid_t? = nil) -> [StatusBarIcon] {
+        var icons: [StatusBarIcon] = []
+        let ownBundleID = Bundle.main.bundleIdentifier
         var children: AnyObject?
         let result = AXUIElementCopyAttributeValue(menuBar, kAXChildrenAttribute as CFString, &children)
 
@@ -118,25 +120,51 @@ class AccessibilityService {
             return []
         }
 
-        var icons: [StatusBarIcon] = []
-        let ownBundleID = Bundle.main.bundleIdentifier
-
         for (index, child) in childrenArray.enumerated() {
             // 第二层过滤：图标所属 app bundle ID 就是自己也跳过
             if let appBundleID = appBundleID, appBundleID == ownBundleID {
                 continue
             }
             if let icon = parseStatusBarIcon(from: child, at: index, appName: appName, appIcon: appIcon, appBundleID: appBundleID, appPID: appPID) {
+                // 修复BUG: 原来 hasAppName 总是 true，导致空容器也被直接添加，永远不会去子层找实际图标
+                // appName 总是存在，不算作图标自身内容
                 let hasTitle = !(icon.title.isEmpty)
                 let hasDescription = icon.description != nil && !icon.description!.isEmpty
                 let hasIdentifier = icon.identifier != nil && !icon.identifier!.isEmpty
-                let hasAppName = !(icon.appName.isEmpty)
-                if hasTitle || hasDescription || hasIdentifier || hasAppName {
+
+                if hasTitle || hasDescription || hasIdentifier {
                     icons.append(icon)
+                } else {
+                    // 图标自身没内容 → 说明是容器，检查一层子元素
+                    var childChildren: AnyObject?
+                    let childResult = AXUIElementCopyAttributeValue(child, kAXChildrenAttribute as CFString, &childChildren)
+                    if childResult == .success, let childChildrenArray = childChildren as? [AXUIElement] {
+                        var found = false
+                        for (childIndex, grandChild) in childChildrenArray.enumerated() {
+                            if let childIcon = parseStatusBarIcon(from: grandChild, at: index * 100 + childIndex, appName: appName, appIcon: appIcon, appBundleID: appBundleID, appPID: appPID) {
+                                let childHasTitle = !(childIcon.title.isEmpty)
+                                let childHasDesc = childIcon.description != nil && !childIcon.description!.isEmpty
+                                let childHasId = childIcon.identifier != nil && !childIcon.identifier!.isEmpty
+                                if childHasTitle || childHasDesc || childHasId {
+                                    icons.append(childIcon)
+                                    found = true
+                                    break // 只加第一个找到的有效图标
+                                }
+                            }
+                        }
+                        // 如果容器里没找到，保持数量不变兜底加容器
+                        if !found {
+                            icons.append(icon)
+                        }
+                    } else {
+                        // 没有子元素，加容器兜底
+                        icons.append(icon)
+                    }
                 }
             }
         }
 
+        // 保持输出数量和原顶级孩子一致 → 布局尺寸不变 → popover不会闪
         return icons
     }
 
@@ -184,18 +212,38 @@ class AccessibilityService {
     // MARK: - Icon Interaction
     
     func performAction(_ icon: StatusBarIcon) -> Bool {
-        let result = AXUIElementPerformAction(
+        // Always click the icon first (for apps that just need menu toggle)
+        var pressSuccess = false
+        let pressResult = AXUIElementPerformAction(
             icon.element,
             kAXPressAction as CFString
         )
-        
-        if result == .success {
-            print("✅ Action performed for \(icon.displayTitle)")
-        } else {
-            print("❌ Action failed for \(icon.displayTitle): \(result.rawValue)")
+        if pressResult == .success {
+            pressSuccess = true
+            print("✅ Action performed (kAXPressAction) for \(icon.displayTitle)")
         }
-        
-        return result == .success
+
+        // Always open/bring main application window
+        // User expects clicking icon here opens main app, not just menu
+        var openSuccess = false
+        if let bundleID = icon.appBundleIdentifier {
+            // Use NSWorkspace to open the app - this guarantees main window comes up
+            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+                openSuccess = NSWorkspace.shared.open(url)
+                print("👉 Opened app \(icon.appName) via NSWorkspace, url=\(url.path), success=\(openSuccess)")
+            } else if let pid = icon.appPID, let app = NSRunningApplication(processIdentifier: pid) {
+                // Fallback: activate if we can't get URL
+                openSuccess = app.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
+                print("👉 Activated app \(icon.appName) pid=\(pid), success=\(openSuccess)")
+            }
+        } else if let pid = icon.appPID, let app = NSRunningApplication(processIdentifier: pid) {
+            openSuccess = app.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
+            print("👉 Activated app \(icon.appName) pid=\(pid), success=\(openSuccess)")
+        }
+
+        // If either click or open succeeded, count as success
+        let overallSuccess = pressSuccess || openSuccess
+        return overallSuccess
     }
 }
 
