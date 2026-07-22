@@ -34,6 +34,9 @@ struct AppSettings: Codable {
 
     /// Whether user has completed first launch (seen popover)
     var hasCompletedFirstLaunch: Bool = false
+
+    /// 自动隐藏 MacStatusLand 图标左侧所有图标
+    var autoHideLeftIcons: Bool = false
 }
 
 /// 快捷键配置
