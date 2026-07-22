@@ -226,19 +226,64 @@ class AccessibilityService {
         // Always open/bring main application window
         // User expects clicking icon here opens main app, not just menu
         var openSuccess = false
-        if let bundleID = icon.appBundleIdentifier {
-            // Use NSWorkspace to open the app - this guarantees main window comes up
-            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
-                openSuccess = NSWorkspace.shared.open(url)
-                print("👉 Opened app \(icon.appName) via NSWorkspace, url=\(url.path), success=\(openSuccess)")
-            } else if let pid = icon.appPID, let app = NSRunningApplication(processIdentifier: pid) {
-                // Fallback: activate if we can't get URL
-                openSuccess = app.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
-                print("👉 Activated app \(icon.appName) pid=\(pid), success=\(openSuccess)")
-            }
-        } else if let pid = icon.appPID, let app = NSRunningApplication(processIdentifier: pid) {
+
+        if let pid = icon.appPID, let app = NSRunningApplication(processIdentifier: pid) {
+            // First try activate current process, raises all windows
             openSuccess = app.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
             print("👉 Activated app \(icon.appName) pid=\(pid), success=\(openSuccess)")
+
+            // Raise all windows via accessibility
+            let appRef = AXUIElementCreateApplication(pid)
+            var windows: AnyObject?
+            let result = AXUIElementCopyAttributeValue(appRef, kAXWindowsAttribute as CFString, &windows)
+            var windowCount = 0
+            if result == .success, let windowArray = windows as? [AXUIElement] {
+                windowCount = windowArray.count
+                for window in windowArray {
+                    AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+                }
+                print("👉 Raised \(windowCount) windows for \(icon.appName)")
+            }
+
+            // If no windows found, this is probably a helper/login item
+            // Try to find main app in parent directory (look up until we find a .app package that is not current helper)
+            if windowCount == 0 {
+                // Get the helper app's bundle URL from running process
+                if let app = NSRunningApplication(processIdentifier: pid), let bundleURL = app.bundleURL {
+                    var components = bundleURL.path.components(separatedBy: "/")
+                    print("👉 Searching for main app from helper path: \(bundleURL.path)")
+
+                    // Remove helper name first, then keep going up until we find a .app
+                    if !components.isEmpty {
+                        components.removeLast() // remove helper app name
+                    }
+
+                    while !components.isEmpty && !(components.last?.hasSuffix(".app") ?? false) {
+                        components.removeLast()
+                    }
+
+                    if let last = components.last, last.hasSuffix(".app") {
+                        let mainAppPath = components.joined(separator: "/")
+                        if FileManager.default.fileExists(atPath: mainAppPath) {
+                            let mainAppURL = URL(fileURLWithPath: mainAppPath)
+                            openSuccess = NSWorkspace.shared.open(mainAppURL)
+                            print("👉 Found main app at \(mainAppPath), opening... success=\(openSuccess)")
+                        }
+                    }
+                }
+            }
+        }
+
+        // If activation didn't work or no pid, try open by bundleID
+        if !openSuccess, let bundleID = icon.appBundleIdentifier {
+            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+                // Skip opening login items (they just helpers, not main app) - already handled above
+                let path = url.path
+                if !path.contains("/Library/LoginItems/") {
+                    openSuccess = NSWorkspace.shared.open(url)
+                    print("👉 Opened app \(icon.appName) via NSWorkspace, url=\(path), success=\(openSuccess)")
+                }
+            }
         }
 
         // If either click or open succeeded, count as success
