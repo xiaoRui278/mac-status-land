@@ -66,3 +66,6 @@
 "category_network" = "网络";
 "category_media" = "媒体";
 "category_utility" = "工具";
+
+/* 设置 - 自动隐藏左侧图标 */
+"settings.auto_hide_left_icons" = "自动隐藏左侧图标";

@@ -66,3 +66,6 @@
 "category_network" = "Network";
 "category_media" = "Media";
 "category_utility" = "Utilities";
+
+/* Settings - Auto hide left icons */
+"settings.auto_hide_left_icons" = "Auto-hide left icons";
