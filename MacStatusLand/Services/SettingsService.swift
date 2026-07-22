@@ -98,6 +98,14 @@ class SettingsService: ObservableObject {
         }
     }
 
+    var autoHideLeftIcons: Bool {
+        get { settings.autoHideLeftIcons }
+        set {
+            settings.autoHideLeftIcons = newValue
+            save()
+        }
+    }
+
     // MARK: - 保存
     
     private func save() {
