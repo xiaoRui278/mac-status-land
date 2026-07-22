@@ -7,6 +7,9 @@ class PlaceholderService {
     static let shared = PlaceholderService()
 
     private init() {
+        // Create placeholder immediately so it's added before main icon
+        // This ensures it's always positioned to the left of the main icon
+        createPlaceholder()
         setupObservers()
     }
 
@@ -15,8 +18,18 @@ class PlaceholderService {
     private var observation: NSKeyValueObservation?
     private var cancellables = Set<AnyCancellable>()
 
+    private func createPlaceholder() {
+        guard statusItem == nil else { return }
+        // Create with initial width 0 (no space taken when disabled)
+        statusItem = NSStatusBar.system.statusItem(withLength: 0)
+        // Make completely transparent, no interaction
+        statusItem?.button?.isTransparent = true
+        statusItem?.button?.wantsLayer = true
+        statusItem?.button?.layer?.backgroundColor = NSColor.clear.cgColor
+    }
+
     private func setupObservers() {
-        // 监听设置变化
+        // Listen for setting changes
         SettingsService.shared.objectWillChange.sink { [weak self] _ in
             DispatchQueue.main.async {
                 self?.handleSettingChanged()
@@ -24,78 +37,61 @@ class PlaceholderService {
         }.store(in: &cancellables)
     }
 
-    /// 启动服务，监听主按钮位置变化
+    /// Start observing position changes of the main button after main icon is created
     func startObserving(mainButton: NSStatusBarButton) {
         self.mainButton = mainButton
 
-        // KVO 监听 frame 变化（位置改变时更新占位宽度）
+        // KVO observe frame changes (update width when user drags icon)
         observation = mainButton.observe(\.frame, options: [.new]) { [weak self] _, _ in
             guard let self = self, SettingsService.shared.autoHideLeftIcons else { return }
             self.updatePlaceholderWidth()
         }
 
-        // 如果功能已经开启，立即创建占位符
+        // Apply current setting
         handleSettingChanged()
     }
 
-    /// 处理设置开关变化
+    /// Handle setting toggle
     private func handleSettingChanged() {
         let enabled = SettingsService.shared.autoHideLeftIcons
 
         if enabled {
-            createPlaceholder()
             updatePlaceholderWidth()
         } else {
-            removePlaceholder()
+            // When disabled, set width back to 0 (no space taken)
+            statusItem?.length = 0
         }
     }
 
-    /// 创建占位符
-    private func createPlaceholder() {
-        guard statusItem == nil else { return }
-        // 创建可变长度的占位符
-        statusItem = NSStatusBar.system.statusItem(withLength: 0)
-        // 完全透明，不显示任何内容，不响应点击
-        statusItem?.button?.isTransparent = true
-        statusItem?.button?.wantsLayer = true
-        statusItem?.button?.layer?.backgroundColor = NSColor.clear.cgColor
-    }
-
-    /// 移除占位符
-    private func removePlaceholder() {
-        if let statusItem = statusItem {
-            NSStatusBar.system.removeStatusItem(statusItem)
-            self.statusItem = nil
-        }
-    }
-
-    /// 根据主按钮位置更新占位宽度
+    /// Update placeholder width based on main button position
     private func updatePlaceholderWidth() {
         guard let statusItem = statusItem,
               let mainButton = mainButton else {
             return
         }
 
-        // 获取主按钮在屏幕坐标系中的 frame
+        // Get main button frame in screen coordinates
         let buttonFrameInWindow = mainButton.convert(mainButton.bounds, to: nil)
         let buttonFrameInScreen = mainButton.window?.convertToScreen(buttonFrameInWindow)
 
-        // 占位宽度 = 主按钮左边缘距离屏幕左边的距离
-        // 这样占位符正好填满从屏幕最左到主按钮左边缘的全部空间
-        // 将这区间内所有图标挤出屏幕可视区域
+        // Placeholder width = distance from screen left edge to main button left edge
+        // This exactly fills the space from left screen edge to our icon
+        // pushing all icons that would be in that space off-screen to the left
         let width = buttonFrameInScreen?.minX ?? 0
 
-        // 更新占位符长度
+        // Update placeholder width
         if width > 0 {
             statusItem.length = width
         } else {
-            // 如果宽度接近0，说明主按钮在最左侧，不需要占位
+            // If width is near zero, main icon is at far left - no need for placeholder
             statusItem.length = 0
         }
     }
 
     deinit {
-        removePlaceholder()
+        if let statusItem = statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+        }
         observation = nil
         cancellables.removeAll()
     }
