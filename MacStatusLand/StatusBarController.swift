@@ -31,13 +31,16 @@ class StatusBarController: NSObject {
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        
+
         if let button = statusItem?.button {
             button.image = NSImage(systemSymbolName: "chevron.right", accessibilityDescription: "MacStatusLand")
             button.image?.isTemplate = true
             button.action = #selector(togglePopover)
             button.target = self
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+
+            // Start placeholder service for auto-hiding left icons
+            PlaceholderService.shared.startObserving(mainButton: button)
         }
     }
 
