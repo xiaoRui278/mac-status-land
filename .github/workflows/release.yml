@@ -121,7 +121,19 @@ jobs:
           prerelease: false
           generate_release_notes: true
           body: |
-            ## Install
+            ## What's new / 更新内容
+
+            **v2.1.1**
+            - Fix clicking nested status bar icons not working (e.g. Aliyun Drive)
+            - Fix popover flashing issue
+            - Always open main app window after clicking icon
+            - Auto detect login-item helper processes (e.g. LemonMonitor) and open main app
+            - 修复嵌套状态栏图标点击无效问题（如阿里云盘）
+            - 修复 popover 闪动问题
+            - 点击图标后总是打开主应用窗口，满足用户预期
+            - 自动识别登录项助手进程，找到并打开主应用（如 Lemon 清理）
+
+            ## Install / 安装
 
             **Homebrew**
             ```bash
@@ -130,6 +142,7 @@ jobs:
 
             **DMG**
             Download `${{ steps.dmg.outputs.dmg_name }}` below and drag `MacStatusLand.app` into `Applications`.
+            下载下方 DMG 文件，将 `MacStatusLand.app` 拖入 `应用程序` 文件夹即可。
 
             **SHA256**
             ```
