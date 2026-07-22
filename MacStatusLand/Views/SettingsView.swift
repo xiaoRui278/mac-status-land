@@ -34,7 +34,9 @@ struct SettingsView: View {
                 Toggle("auto_close_focus_loss".localized(), isOn: $settings.autoCloseOnFocusLoss)
                 
                 Toggle("show_system_apps".localized(), isOn: $settings.showSystemApps)
-                
+
+                Toggle("settings.auto_hide_left_icons".localized(), isOn: $settings.autoHideLeftIcons)
+
                 Picker("refresh_interval".localized(), selection: $settings.autoRefreshInterval) {
                     Text("15 秒").tag(15)
                     Text("30 秒").tag(30)
