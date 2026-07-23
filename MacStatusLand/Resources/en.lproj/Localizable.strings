@@ -30,15 +30,9 @@
 "launch_at_login" = "Launch at Login";
 "auto_close_focus_loss" = "Auto-close on Focus Loss";
 "show_system_apps" = "Show System Icons";
-"refresh_interval" = "Refresh Interval";
-"hotkey_section" = "Keyboard Shortcut";
 "general_section" = "General Settings";
 "language_section" = "Language Settings";
 "app_language" = "App Language";
-"presets_section" = "Presets";
-"hidden_icons_section" = "Hidden Icons";
-"add_preset" = "Add Preset";
-"restore_icon" = "Restore Icon";
 "pinned_label" = "Pinned";
 "no_permission" = "No Accessibility Permission";
 "no_icons_found" = "No Status Bar Icons Found";
