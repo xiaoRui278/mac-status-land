@@ -69,3 +69,4 @@
 
 /* 设置 - 自动隐藏左侧图标 */
 "settings.auto_hide_left_icons" = "自动隐藏左侧图标";
+"settings.auto_hide_left_icons.hint" = "提示：按住 ⌘ Command 键拖动菜单栏图标可调整位置，从而隐藏 MSL 图标左侧的其他图标";

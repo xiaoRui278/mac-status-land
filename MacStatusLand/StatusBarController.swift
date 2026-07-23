@@ -39,7 +39,7 @@ class StatusBarController: NSObject {
             button.target = self
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
 
-            // Start placeholder service for auto-hiding left icons
+            // 启动占位服务（占位符会在 startObserving 内部创建，位于主图标左侧）
             PlaceholderService.shared.startObserving(mainButton: button)
         }
     }

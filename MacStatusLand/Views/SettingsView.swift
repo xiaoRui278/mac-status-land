@@ -37,6 +37,19 @@ struct SettingsView: View {
 
                 Toggle("settings.auto_hide_left_icons".localized(), isOn: $settings.autoHideLeftIcons)
 
+                if settings.autoHideLeftIcons {
+                    HStack(alignment: .top, spacing: 6) {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                        Text("settings.auto_hide_left_icons.hint".localized())
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.leading, 4)
+                }
+
                 Picker("refresh_interval".localized(), selection: $settings.autoRefreshInterval) {
                     Text("15 秒").tag(15)
                     Text("30 秒").tag(30)

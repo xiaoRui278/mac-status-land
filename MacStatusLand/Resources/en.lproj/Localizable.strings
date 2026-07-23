@@ -69,3 +69,4 @@
 
 /* Settings - Auto hide left icons */
 "settings.auto_hide_left_icons" = "Auto-hide left icons";
+"settings.auto_hide_left_icons.hint" = "Tip: Hold ⌘ Command and drag menu bar icons to reposition them, hiding icons to the left of MSL";
