@@ -97,30 +97,6 @@ struct SettingsView: View {
                 }
             }
             
-            // 已隐藏图标
-            Section("hidden_icons_section".localized()) {
-                if settings.hiddenIcons.isEmpty {
-                    Text("无隐藏图标")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(Array(settings.hiddenIcons), id: \.self) { bundleId in
-                        HStack {
-                            Text(bundleId)
-                                .font(.caption)
-                                .lineLimit(1)
-                            
-                            Spacer()
-                            
-                            Button("restore_icon".localized()) {
-                                settings.hiddenIcons.remove(bundleId)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        }
-                    }
-                }
-            }
-            
             // 语言
             Section("language_section".localized()) {
                 Picker("app_language".localized(), selection: $settings.appLanguage) {
