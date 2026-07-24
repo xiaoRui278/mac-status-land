@@ -179,6 +179,16 @@ MacStatusLand/
 
 ## 📝 更新日志
 
+### v2.2.0 (2026-07-24)
+- ✨ 新增 **分界图标 `▮`**（借鉴 [Ice](https://github.com/jordanbaird/Ice)）：点击一键隐藏 / 恢复其左侧所有菜单栏图标，兼容刘海屏
+- ✨ 分界图标可 `⌘ Command` 拖动调整分界位置；首次启动弹出引导气泡
+- ✨ 弹窗顶部新增侧栏切换按钮，快速开关隐藏
+- ✨ 设置页新增「关于菜单栏图标」区块，图文说明两枚图标职责及顺序注意事项
+- ✨ 主图标改为 `list.bullet`（列表样式），语义更贴切；弹窗标题缩为 MSL
+- 🐛 修复纯菜单栏 app（阿里云盘 / TopSAP 等）点击无反应
+- 🐛 修复 Docker Desktop / WPS Office Service 等 popover-only app 的主界面/popover 召唤逻辑（改用 `NSWorkspace.openApplication` + reopen Apple Event）
+- 🐛 隐藏状态下点击 popover 类 app 时，自动临时抬起分界让原图标就位后再触发
+
 ### v2.1.0 (2026-07-17)
 - ✨ 图标右键菜单新增 **退出 / 强制退出**
 - ✨ Popover 顶部新增 **全部退出** 按钮（带二次确认）
