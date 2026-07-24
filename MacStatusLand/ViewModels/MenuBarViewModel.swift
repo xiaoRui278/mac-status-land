@@ -132,19 +132,23 @@ class MenuBarViewModel {
 
             if uniqueID == icon.id {
                 print("✅ [MenuBarViewModel] found raw icon, performing action...")
-                let success = accessibilityService.performAction(raw)
-                print(success ? "✅ [MenuBarViewModel] click succeeded" : "❌ [MenuBarViewModel] click failed")
-
-                if success {
-                    if let index = icons.firstIndex(where: { $0.id == icon.id }) {
-                        icons[index].lastUsed = Date()
+                // 隐藏状态下先临时抬起，让被挤出屏幕的原图标恢复可点击位置
+                // 对 popover-only app（Docker/微信 等）尤为关键
+                PlaceholderService.shared.performTemporaryReveal { [weak self] in
+                    guard let self = self else { return }
+                    let success = self.accessibilityService.performAction(raw)
+                    print(success ? "✅ [MenuBarViewModel] click succeeded" : "❌ [MenuBarViewModel] click failed")
+                    if success {
+                        if let index = self.icons.firstIndex(where: { $0.id == icon.id }) {
+                            self.icons[index].lastUsed = Date()
+                        }
+                    } else {
+                        self.errorMessage = "点击失败"
+                        self.showError = true
                     }
-                } else {
-                    errorMessage = "点击失败"
-                    showError = true
                 }
-
-                return success
+                // 返回 true：抬起 + 触发都是异步的，走乐观策略；真失败时上面回调已 setError
+                return true
             }
         }
 

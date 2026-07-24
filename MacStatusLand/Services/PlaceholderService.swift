@@ -139,6 +139,34 @@ class PlaceholderService: NSObject {
         SettingsService.shared.autoHideLeftIcons.toggle()
     }
 
+    // MARK: - 临时抬起
+
+    /// 若当前处于隐藏状态，临时收起 divider 让菜单栏图标全部可见，执行 action，然后恢复
+    /// - 用途：点击一个原本被挤出屏幕的 app 图标时，先"抬起"隐藏帷幕让 AXPress 能命中真实位置
+    /// - 若当前未开启隐藏，直接同步执行 action，不做任何抬起
+    func performTemporaryReveal(action: @escaping () -> Void) {
+        guard let item = dividerItem, SettingsService.shared.autoHideLeftIcons else {
+            action()
+            return
+        }
+        // 记住原长度并收起
+        let originalLength = item.length
+        item.length = NSStatusItem.squareLength
+
+        // 等菜单栏布局稳定后触发 action
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            action()
+            // 兜底：action 完成后延迟恢复隐藏；popover-only app 的 popover 需要用户点外部关闭，
+            // 若立刻恢复 length 会瞬间把 popover 挤走。等 1.5s 让 popover 显示稳定
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                // 用户可能在此期间自己切换了隐藏状态；仅当仍应隐藏时才恢复长度
+                if SettingsService.shared.autoHideLeftIcons {
+                    item.length = originalLength
+                }
+            }
+        }
+    }
+
     private func handleSettingChanged() {
         let enabled = SettingsService.shared.autoHideLeftIcons
         guard let item = dividerItem else { return }

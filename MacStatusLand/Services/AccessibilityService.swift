@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import CoreGraphics
 
 class AccessibilityService {
     
@@ -245,30 +246,65 @@ class AccessibilityService {
                 print("👉 Raised \(windowCount) windows for \(icon.appName)")
             }
 
-            // If no windows found, this is probably a helper/login item
-            // Try to find main app in parent directory (look up until we find a .app package that is not current helper)
-            if windowCount == 0 {
-                // Get the helper app's bundle URL from running process
+            // 判断是否有"真正的普通窗口"（非菜单/悬浮）
+            // AX 里的 windowCount 会把状态栏 popover、隐藏后台窗口都算进去，导致
+            // 像 WPS Office Service 这种明明没有主界面却 count=1 的情况不进兜底分支。
+            // 用 CGWindowList 过滤 layer=0（普通应用窗口）来更准确判断。
+            let hasNormalWindow = appHasNormalWindow(pid: pid)
+            print("👉 hasNormalWindow=\(hasNormalWindow) for \(icon.appName)")
+
+            // If no visible normal window, this is probably a helper/login item OR a menu-bar-only app
+            if !hasNormalWindow {
                 if let app = NSRunningApplication(processIdentifier: pid), let bundleURL = app.bundleURL {
-                    var components = bundleURL.path.components(separatedBy: "/")
-                    print("👉 Searching for main app from helper path: \(bundleURL.path)")
+                    let path = bundleURL.path
+                    print("👉 No visible window. Trying to open main window from: \(path)")
 
-                    // Remove helper name first, then keep going up until we find a .app
-                    if !components.isEmpty {
-                        components.removeLast() // remove helper app name
-                    }
-
-                    while !components.isEmpty && !(components.last?.hasSuffix(".app") ?? false) {
-                        components.removeLast()
-                    }
-
-                    if let last = components.last, last.hasSuffix(".app") {
-                        let mainAppPath = components.joined(separator: "/")
-                        if FileManager.default.fileExists(atPath: mainAppPath) {
-                            let mainAppURL = URL(fileURLWithPath: mainAppPath)
-                            openSuccess = NSWorkspace.shared.open(mainAppURL)
-                            print("👉 Found main app at \(mainAppPath), opening... success=\(openSuccess)")
+                    // Helper 场景：路径含 /Library/LoginItems/ 或 /Contents/Library/ → 向上查找主 .app
+                    let isHelper = path.contains("/Library/LoginItems/") || path.contains("/Contents/")
+                    if isHelper {
+                        var components = path.components(separatedBy: "/")
+                        if !components.isEmpty { components.removeLast() }
+                        while !components.isEmpty && !(components.last?.hasSuffix(".app") ?? false) {
+                            components.removeLast()
                         }
+                        if let last = components.last, last.hasSuffix(".app") {
+                            let mainAppPath = components.joined(separator: "/")
+                            if FileManager.default.fileExists(atPath: mainAppPath) {
+                                let mainAppURL = URL(fileURLWithPath: mainAppPath)
+                                // 用 openApplication 而非 open，触发 default launch，
+                                // 对已运行 app（如 Docker）会请求它显示主窗口
+                                let config = NSWorkspace.OpenConfiguration()
+                                config.activates = true
+                                NSWorkspace.shared.openApplication(at: mainAppURL, configuration: config) { _, error in
+                                    if let error = error {
+                                        print("⚠️ openApplication failed for helper's main app \(mainAppPath): \(error)")
+                                    } else {
+                                        print("👉 openApplication succeeded for helper's main app \(mainAppPath)")
+                                    }
+                                }
+                                // 补发 reopen Apple Event，模拟双击 Dock 图标语义
+                                // openApplication 对已运行 app 只激活不开窗（如 Docker Electron）
+                                if let mainApp = runningApp(for: mainAppURL) {
+                                    sendReopenEvent(to: mainApp.processIdentifier)
+                                }
+                                openSuccess = true
+                            }
+                        }
+                    } else {
+                        // 菜单栏 app 自身：NSWorkspace.open 请求系统调起主窗口
+                        // 使用 openApplication 显式带 activate 语义，效果类似双击 Dock 图标
+                        let config = NSWorkspace.OpenConfiguration()
+                        config.activates = true
+                        NSWorkspace.shared.openApplication(at: bundleURL, configuration: config) { _, error in
+                            if let error = error {
+                                print("⚠️ openApplication failed for \(path): \(error)")
+                            } else {
+                                print("👉 openApplication succeeded for \(path)")
+                            }
+                        }
+                        // 补发 reopen（rapp）Apple Event，语义 = 双击 Dock 图标
+                        sendReopenEvent(to: pid)
+                        openSuccess = true
                     }
                 }
             }
@@ -289,6 +325,64 @@ class AccessibilityService {
         // If either click or open succeeded, count as success
         let overallSuccess = pressSuccess || openSuccess
         return overallSuccess
+    }
+
+    /// 检查指定进程是否有真正的"普通应用窗口"（layer=0）
+    /// 用 CGWindowListCopyWindowInfo，过滤：
+    /// - kCGWindowLayer == 0（普通窗口层；菜单、Dock、状态栏 popover 等 layer > 0）
+    /// - kCGWindowOwnerPID == pid
+    /// - 有非零尺寸
+    private func appHasNormalWindow(pid: pid_t) -> Bool {
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+        guard let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
+            return false
+        }
+        for info in list {
+            guard let ownerPID = info[kCGWindowOwnerPID as String] as? pid_t, ownerPID == pid else { continue }
+            let layer = info[kCGWindowLayer as String] as? Int ?? 0
+            guard layer == 0 else { continue }
+            if let bounds = info[kCGWindowBounds as String] as? [String: Any],
+               let w = bounds["Width"] as? CGFloat, let h = bounds["Height"] as? CGFloat,
+               w > 50, h > 50 {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// 查找 bundleURL 对应的正在运行的 NSRunningApplication
+    private func runningApp(for bundleURL: URL) -> NSRunningApplication? {
+        return NSWorkspace.shared.runningApplications.first { $0.bundleURL == bundleURL }
+    }
+
+    /// 向目标进程发送 reopen (`rapp`) Apple Event，等效双击 Dock 图标
+    /// 对 Electron / Chromium 类应用尤为关键：openApplication 只激活不开窗，reopen 才会显示主窗口
+    private func sendReopenEvent(to pid: pid_t) {
+        var pidVar = pid
+        guard let target = NSAppleEventDescriptor(
+            descriptorType: typeKernelProcessID,
+            bytes: &pidVar,
+            length: MemoryLayout.size(ofValue: pidVar)
+        ) else {
+            print("⚠️ Failed to build target descriptor for reopen pid=\(pid)")
+            return
+        }
+        let event = NSAppleEventDescriptor(
+            eventClass: AEEventClass(kCoreEventClass),
+            eventID: AEEventID(kAEReopenApplication),
+            targetDescriptor: target,
+            returnID: AEReturnID(kAutoGenerateReturnID),
+            transactionID: AETransactionID(kAnyTransactionID)
+        )
+        var reply = AppleEvent()
+        var eventCopy = event.aeDesc!.pointee
+        let sendResult = AESendMessage(&eventCopy, &reply, AESendMode(kAENoReply), 1)
+        if sendResult == noErr {
+            print("👉 Sent reopen event to pid=\(pid)")
+        } else {
+            print("⚠️ Reopen event failed pid=\(pid) OSStatus=\(sendResult)")
+        }
+        AEDisposeDesc(&reply)
     }
 }
 
