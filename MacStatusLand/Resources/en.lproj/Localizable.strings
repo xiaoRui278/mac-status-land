@@ -63,4 +63,22 @@
 
 /* Settings - Auto hide left icons */
 "settings.auto_hide_left_icons" = "Auto-hide left icons";
-"settings.auto_hide_left_icons.hint" = "Tip: Hold ⌘ Command and drag menu bar icons to reposition them, hiding icons to the left of MSL";
+"settings.auto_hide_left_icons.hint" = "Tip: A sidebar icon appears in the menu bar. Click to hide all icons to its left. Hold ⌘ Command and drag it to adjust the boundary.";
+"toggle_hide_left" = "Hide Left";
+"toggle_show_left" = "Show Left";
+
+/* Settings - About icons */
+"about_icons_section" = "About Menu Bar Icons";
+"about_main_icon_title" = "Main Icon (list)";
+"about_main_icon_desc" = "Click to open the MacStatusLand popover and view third-party icons hidden behind the notch. Right-click for Settings / Quit menu.";
+"about_divider_icon_title" = "Divider Icon (sidebar)";
+"about_divider_icon_desc" = "Click to hide / restore all menu-bar icons on its left. Hold ⌘ Command and drag to adjust the boundary.";
+"about_order_warning" = "Keep the main icon on the RIGHT side of the divider icon, otherwise the main icon will also be pushed off-screen when hiding is enabled. Hold ⌘ Command and drag to reorder.";
+
+/* Divider hint & tooltip */
+"divider_hint_title" = "Hide Left Icons";
+"divider_hint_body" = "Click this icon: hide all menu-bar icons to its left.\nHold ⌘ Command and drag: adjust the boundary.\nTo restore: toggle the switch at the top of the popover, or click this icon again.\n\n⚠️ Keep the MSL main icon (≡) on the RIGHT side of this icon, otherwise the main icon will also be pushed off-screen when hiding is enabled.";
+"divider_hint_dismiss" = "Got it";
+"main_icon_tooltip" = "MacStatusLand — click to view hidden icons";
+"divider_icon_tooltip" = "Click to hide left icons · Hold ⌘ and drag to adjust";
+"divider_icon_tooltip_active" = "Left icons hidden · toggle from popover header";

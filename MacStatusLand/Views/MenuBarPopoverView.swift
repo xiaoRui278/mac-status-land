@@ -3,6 +3,7 @@ import SwiftUI
 @available(macOS 14.0, *)
 struct MenuBarPopoverView: View {
     @State private var viewModel = MenuBarViewModel()
+    @ObservedObject private var settings = SettingsService.shared
     @State private var showCheckmark: String?  // 显示成功动画的图标 ID
     @State private var shakingIcon: String?    // 显示抖动动画的图标 ID
     @State private var showQuitAllAlert: Bool = false
@@ -74,10 +75,36 @@ struct MenuBarPopoverView: View {
     
     private var headerSection: some View {
         HStack(spacing: 8) {
-            Text("MacStatusLand")
+            Text("MSL")
                 .font(.headline)
+                .help("MacStatusLand")
 
             Spacer()
+
+            // 快速切换：隐藏/显示左侧图标
+            Button(action: {
+                settings.autoHideLeftIcons.toggle()
+            }) {
+                Image(systemName: settings.autoHideLeftIcons ? "sidebar.left" : "sidebar.leading")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(settings.autoHideLeftIcons ? Color.accentColor : Color.secondary)
+                    .padding(6)
+                    .background(
+                        settings.autoHideLeftIcons
+                            ? Color.accentColor.opacity(0.12)
+                            : (viewModel.hoveredHeaderId == "toggle-hide" ? Color.secondary.opacity(0.1) : Color.clear),
+                        in: Circle()
+                    )
+            }
+            .buttonStyle(.plain)
+            .help(settings.autoHideLeftIcons ? "toggle_show_left".localized() : "toggle_hide_left".localized())
+            .onHover { isHovered in
+                withAnimation(.easeOut(duration: 0.15)) {
+                    if !accessibilityReduceMotion {
+                        viewModel.hoveredHeaderId = isHovered ? "toggle-hide" : nil
+                    }
+                }
+            }
 
             // 全部退出（强制）
             Button(action: { showQuitAllAlert = true }) {

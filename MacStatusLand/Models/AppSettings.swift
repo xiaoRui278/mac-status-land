@@ -27,4 +27,7 @@ struct AppSettings: Codable {
 
     /// 自动隐藏 MacStatusLand 图标左侧所有图标
     var autoHideLeftIcons: Bool = false
+
+    /// 是否已看过 divider 图标的首次使用引导
+    var hasSeenDividerHint: Bool = false
 }

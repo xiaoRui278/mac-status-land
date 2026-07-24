@@ -30,16 +30,18 @@ class StatusBarController: NSObject {
     }
 
     private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem = item
 
-        if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "chevron.right", accessibilityDescription: "MacStatusLand")
+        if let button = item.button {
+            button.image = NSImage(systemSymbolName: "list.bullet", accessibilityDescription: "MacStatusLand")
             button.image?.isTemplate = true
+            button.toolTip = "main_icon_tooltip".localized()
             button.action = #selector(togglePopover)
             button.target = self
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
 
-            // 启动占位服务（占位符会在 startObserving 内部创建，位于主图标左侧）
+            // 启动 divider 服务（参考 Ice，通过 length=10000 挤压左侧图标，兼容刘海屏）
             PlaceholderService.shared.startObserving(mainButton: button)
         }
     }
@@ -116,7 +118,7 @@ class StatusBarController: NSObject {
         NSApp.setActivationPolicy(.regular)
         
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: 400),
+            contentRect: NSRect(x: 0, y: 0, width: 560, height: 560),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false

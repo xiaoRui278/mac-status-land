@@ -82,6 +82,14 @@ class SettingsService: ObservableObject {
         }
     }
 
+    var hasSeenDividerHint: Bool {
+        get { settings.hasSeenDividerHint }
+        set {
+            settings.hasSeenDividerHint = newValue
+            save()
+        }
+    }
+
     // MARK: - 保存
 
     private func save() {

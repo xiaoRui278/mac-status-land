@@ -63,4 +63,22 @@
 
 /* 设置 - 自动隐藏左侧图标 */
 "settings.auto_hide_left_icons" = "自动隐藏左侧图标";
-"settings.auto_hide_left_icons.hint" = "提示：按住 ⌘ Command 键拖动菜单栏图标可调整位置，从而隐藏 MSL 图标左侧的其他图标";
+"settings.auto_hide_left_icons.hint" = "提示：菜单栏出现一个「侧栏」图标，点击即可隐藏其左侧所有图标；也可按住 ⌘ Command 拖动该图标调整分界位置。";
+"toggle_hide_left" = "隐藏左侧";
+"toggle_show_left" = "显示左侧";
+
+/* 设置 - 关于图标 */
+"about_icons_section" = "关于菜单栏图标";
+"about_main_icon_title" = "主图标（列表图标）";
+"about_main_icon_desc" = "点击打开 MacStatusLand 弹窗，查看被刘海遮挡的第三方应用图标；右键弹出「设置 / 退出」菜单。";
+"about_divider_icon_title" = "分界图标（侧栏图标）";
+"about_divider_icon_desc" = "点击即可一键隐藏 / 恢复其左侧的所有菜单栏图标；按住 ⌘ Command 拖动可调整分界位置。";
+"about_order_warning" = "请保持主图标位于分界图标的右侧，否则开启隐藏时主图标也会被挤出屏幕。可按住 ⌘ Command 拖动图标调整顺序。";
+
+/* Divider 引导 & Tooltip */
+"divider_hint_title" = "隐藏左侧图标";
+"divider_hint_body" = "点击此图标：隐藏其左侧所有菜单栏图标。\n按住 ⌘ Command 拖动：调整分界位置。\n再次显示：打开弹窗顶部的开关，或点击此图标。\n\n⚠️ 请确保 MSL 主图标（≡）位于此图标的右边，否则开启后主图标也会被挤出屏幕。";
+"divider_hint_dismiss" = "知道了";
+"main_icon_tooltip" = "MacStatusLand — 点击查看被隐藏的图标";
+"divider_icon_tooltip" = "点击隐藏左侧图标 · 按住 ⌘ 拖动可调整分界";
+"divider_icon_tooltip_active" = "左侧图标已隐藏 · 在弹窗顶部可切换";
