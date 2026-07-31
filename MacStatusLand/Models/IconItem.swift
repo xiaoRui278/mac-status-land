@@ -2,6 +2,7 @@
 
 import Foundation
 import AppKit
+import SwiftUI
 
 /// 图标数据模型
 struct IconItem: Identifiable, Codable, Equatable {
@@ -72,6 +73,28 @@ enum IconCategory: String, Codable, CaseIterable {
         case .media: return "category_media".localized()
         case .utility: return "category_utility".localized()
         case .thirdParty: return "category_third_party".localized()
+        }
+    }
+
+    /// 分组头左侧图标
+    var sfSymbol: String {
+        switch self {
+        case .system: return "gearshape.2"
+        case .network: return "wifi"
+        case .media: return "music.note"
+        case .utility: return "wrench.and.screwdriver"
+        case .thirdParty: return "app.badge"
+        }
+    }
+
+    /// 分组头 tint
+    var tint: Color {
+        switch self {
+        case .system: return .secondary
+        case .network: return .blue
+        case .media: return .pink
+        case .utility: return .orange
+        case .thirdParty: return .accentColor
         }
     }
 

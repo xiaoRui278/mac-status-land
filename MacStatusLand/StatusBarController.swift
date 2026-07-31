@@ -48,7 +48,7 @@ class StatusBarController: NSObject {
 
     private func setupPopover() {
         let popover = NSPopover()
-        popover.contentSize = NSSize(width: 300, height: 400)
+        popover.contentSize = NSSize(width: 340, height: 420)
         popover.behavior = .transient
         popover.animates = true
 
@@ -63,6 +63,14 @@ class StatusBarController: NSObject {
             self,
             selector: #selector(appDidDeactivate),
             name: NSWorkspace.didDeactivateApplicationNotification,
+            object: nil
+        )
+
+        // 监听 popover 内部"打开设置"请求
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(openSettings),
+            name: .menuBarDidRequestSettings,
             object: nil
         )
     }
@@ -165,4 +173,5 @@ class StatusBarController: NSObject {
 
 extension Notification.Name {
     static let popoverDidOpen = Notification.Name("popoverDidOpen")
+    static let menuBarDidRequestSettings = Notification.Name("menuBarDidRequestSettings")
 }

@@ -6,7 +6,6 @@ struct MenuBarPopoverView: View {
     @ObservedObject private var settings = SettingsService.shared
     @State private var showCheckmark: String?  // 显示成功动画的图标 ID
     @State private var shakingIcon: String?    // 显示抖动动画的图标 ID
-    @State private var showQuitAllAlert: Bool = false
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     
     var body: some View {
@@ -28,7 +27,11 @@ struct MenuBarPopoverView: View {
             if viewModel.isLoading {
                 loadingSection
             } else if viewModel.filteredIcons.isEmpty {
-                emptyStateSection
+                if !viewModel.searchText.isEmpty {
+                    searchEmptyStateSection
+                } else {
+                    emptyStateSection
+                }
             } else {
                 iconListSection
             }
@@ -36,7 +39,7 @@ struct MenuBarPopoverView: View {
             // 底部栏
             footerSection
         }
-        .frame(width: 300)
+        .frame(width: 340)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
@@ -50,34 +53,25 @@ struct MenuBarPopoverView: View {
         .onReceive(NotificationCenter.default.publisher(for: .popoverDidOpen)) { _ in
             Task { await viewModel.refresh() }
         }
-        .alert("quit_all_alert_title".localized(), isPresented: $showQuitAllAlert) {
-            Button("cancel".localized(), role: .cancel) {}
-            Button("quit_all_confirm".localized(), role: .destructive) {
-                viewModel.forceQuitAll()
-            }
-        } message: {
-            Text(quitAllAlertMessage)
-        }
-    }
-
-    /// 弹窗正文：列出前 3 个 app 名称 + 剩余数量
-    private var quitAllAlertMessage: String {
-        let targets = viewModel.quitAllTargets
-        let previewCount = 3
-        let names = targets.prefix(previewCount).map { $0.appName }.joined(separator: "、")
-        if targets.count > previewCount {
-            return "quit_all_alert_message_more".localizedFormat(nil, Int64(targets.count), names)
-        }
-        return "quit_all_alert_message".localizedFormat(nil, Int64(targets.count), names)
     }
     
     // MARK: - 顶部栏
     
     private var headerSection: some View {
-        HStack(spacing: 8) {
-            Text("MSL")
-                .font(.headline)
-                .help("MacStatusLand")
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    if let appIcon = appIconImage() {
+                        Image(nsImage: appIcon)
+                            .resizable()
+                            .frame(width: 18, height: 18)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                    Text("MSL")
+                        .font(.headline)
+                        .help("MacStatusLand")
+                }
+                .padding(.leading, 4)
 
             Spacer()
 
@@ -106,34 +100,78 @@ struct MenuBarPopoverView: View {
                 }
             }
 
-            // 全部退出（强制）
-            Button(action: { showQuitAllAlert = true }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "power")
-                        .font(.system(size: 12, weight: .semibold))
-                    Text("quit_all_button".localized())
-                        .font(.system(size: 12, weight: .medium))
+            // 全部退出（强制）/ 进度
+            if viewModel.isQuittingAll {
+                HStack(spacing: 6) {
+                    ProgressView(value: viewModel.quitProgressFraction)
+                        .progressViewStyle(.linear)
+                        .frame(width: 90)
+                    Text("正在退出 \(viewModel.quitProgressDone)/\(viewModel.quitProgressTotal)")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
                 }
-                .foregroundStyle(.red)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(.red.opacity(0.12), in: Capsule())
-                .overlay(
-                    Capsule().stroke(.red.opacity(0.3), lineWidth: 0.5)
-                )
+                .background(.secondary.opacity(0.12), in: Capsule())
+            } else {
+                Button(action: {
+                    if viewModel.confirmingQuitAll {
+                        viewModel.confirmQuitAll()
+                    } else {
+                        viewModel.requestQuitAll()
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "power")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("quit_all_button".localized())
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.red.opacity(0.12), in: Capsule())
+                    .overlay(
+                        Capsule().stroke(.red.opacity(0.3), lineWidth: 0.5)
+                    )
+                }
+                .buttonStyle(.plain)
+                .help("quit_all_button".localized())
+                .disabled(viewModel.quitAllTargets.isEmpty)
+                .opacity(viewModel.quitAllTargets.isEmpty ? 0.4 : 1)
+                .onHover { isHovered in
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        if !accessibilityReduceMotion {
+                            viewModel.hoveredHeaderId = isHovered ? "quit-all" : nil
+                        }
+                    }
+                }
+                .scaleEffect(viewModel.hoveredHeaderId == "quit-all" && !accessibilityReduceMotion ? 1.05 : 1.0)
+            }
+
+            // 设置入口
+            Button(action: {
+                NotificationCenter.default.post(name: .menuBarDidRequestSettings, object: nil)
+            }) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .padding(6)
+                    .background(
+                        viewModel.hoveredHeaderId == "settings" ? .secondary.opacity(0.1) : Color.clear,
+                        in: Circle()
+                    )
             }
             .buttonStyle(.plain)
-            .help("quit_all_button".localized())
-            .disabled(viewModel.quitAllTargets.isEmpty)
-            .opacity(viewModel.quitAllTargets.isEmpty ? 0.4 : 1)
+            .help("settings_menu".localized())
             .onHover { isHovered in
                 withAnimation(.easeOut(duration: 0.15)) {
                     if !accessibilityReduceMotion {
-                        viewModel.hoveredHeaderId = isHovered ? "quit-all" : nil
+                        viewModel.hoveredHeaderId = isHovered ? "settings" : nil
                     }
                 }
             }
-            .scaleEffect(viewModel.hoveredHeaderId == "quit-all" && !accessibilityReduceMotion ? 1.05 : 1.0)
 
             Button(action: { Task { await viewModel.refresh() } }) {
                 Image(systemName: "arrow.clockwise")
@@ -154,9 +192,66 @@ struct MenuBarPopoverView: View {
                     }
                 }
             }
+            .padding(.horizontal, 12)
+            .padding(.top, 10)
+            .padding(.bottom, viewModel.confirmingQuitAll ? 8 : 10)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+
+            // inline 二次确认条（power 按钮第一次点后展开；5s 不点自动收起）
+            if viewModel.confirmingQuitAll {
+                quitAllConfirmBar
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 10)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: viewModel.confirmingQuitAll)
+    }
+
+    private var quitAllConfirmBar: some View {
+        let count = viewModel.quitAllTargets.count
+        return HStack(spacing: 8) {
+            // 倒计时环（左侧装饰，5s 顺时针缩到 0）
+            ZStack {
+                Circle()
+                    .stroke(Color.secondary.opacity(0.2), lineWidth: 2)
+                Circle()
+                    .trim(from: 0, to: viewModel.quitConfirmFraction)
+                    .stroke(Color.red, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear(duration: 0.1), value: viewModel.quitConfirmFraction)
+            }
+            .frame(width: 16, height: 16)
+
+            Text("确认退出 \(count) 个应用？")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+
+            Spacer(minLength: 4)
+
+            Button("取消") { viewModel.cancelQuitAllConfirm() }
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .foregroundStyle(.secondary)
+
+            Button(role: .destructive) {
+                viewModel.confirmQuitAll()
+            } label: {
+                Text("退出")
+                    .fontWeight(.semibold)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .tint(.red)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(.red.opacity(0.25), lineWidth: 0.5)
+        )
     }
     
     // MARK: - 搜索栏
@@ -220,11 +315,18 @@ struct MenuBarPopoverView: View {
             let categoryIcons = viewModel.unpinnedIcons.filter { $0.category == category }
 
             if !categoryIcons.isEmpty {
-                HStack {
+                HStack(spacing: 6) {
+                    Image(systemName: category.sfSymbol)
+                        .font(.caption2)
+                        .foregroundStyle(category.tint)
                     Text(category.displayName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
+                    Text("\(categoryIcons.count)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .monospacedDigit()
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 2)
@@ -244,13 +346,14 @@ struct MenuBarPopoverView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
-        .frame(maxHeight: min(NSScreen.main?.frame.height ?? 480 * 0.4, 320))
+        .frame(maxHeight: min(NSScreen.main?.frame.height ?? 480 * 0.4, 360))
     }
     
     // MARK: - 图标行
     
     private func iconRow(_ icon: IconItem) -> some View {
-        HStack(spacing: 12) {
+        let isPressed = viewModel.pressedIconId == icon.id
+        return HStack(spacing: 12) {
             // 图标
             Group {
                 if let image = icon.iconImage {
@@ -280,10 +383,12 @@ struct MenuBarPopoverView: View {
 
             Spacer()
 
-            // 操作指示
+            // 操作指示（hover 才出现，视觉更安静）
             Image(systemName: "chevron.right")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+                .opacity(viewModel.hoveredIconId == icon.id ? 0.8 : 0)
+                .animation(.easeOut(duration: 0.12), value: viewModel.hoveredIconId)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -313,7 +418,17 @@ struct MenuBarPopoverView: View {
                 }
             }
         }
+        .scaleEffect(isPressed ? 0.97 : 1.0)
+        .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isPressed)
         .onTapGesture {
+            // 按压瞬间反馈
+            withAnimation { viewModel.pressedIconId = icon.id }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                if viewModel.pressedIconId == icon.id {
+                    viewModel.pressedIconId = nil
+                }
+            }
+
             let success = viewModel.clickIcon(icon)
             if !accessibilityReduceMotion {
                 withAnimation(.easeInOut(duration: 0.3)) {
@@ -418,18 +533,32 @@ struct MenuBarPopoverView: View {
         .frame(maxHeight: 200)
         .padding()
     }
+
+    private var searchEmptyStateSection: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 32, weight: .light))
+                .foregroundStyle(.tertiary)
+            Text("无匹配结果")
+                .font(.headline)
+            Text("试试别的关键词，或清空搜索框")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button("清空搜索") {
+                viewModel.searchText = ""
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .frame(maxHeight: 200)
+        .padding()
+    }
     
     // MARK: - 底部栏
     
     private var footerSection: some View {
         HStack {
-            Button(action: { Task { await viewModel.refresh() } }) {
-                Label("refresh".localized(), systemImage: "arrow.clockwise")
-                    .font(.caption)
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.isLoading)
-            
             Spacer()
 
             Text("GitHub")
@@ -456,5 +585,20 @@ struct MenuBarPopoverView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(.regularMaterial.opacity(0.5))
+    }
+
+    /// 加载 app 图标：避开 NSApp.applicationIconImage（spm run 下会返回系统 generic 占位图，显示成"文件夹"）
+    /// 1. Bundle.main 读 AppIcon.icns（release .app 模式：.app/Contents/Resources/ 下）
+    /// 2. Bundle.module 读 AppIcon.icns（spm run 模式：SPM resource bundle 内）
+    private func appIconImage() -> NSImage? {
+        if let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+           let img = NSImage(contentsOf: url), img.size.width > 0 {
+            return img
+        }
+        if let url = Bundle.module.url(forResource: "AppIcon", withExtension: "icns"),
+           let img = NSImage(contentsOf: url), img.size.width > 0 {
+            return img
+        }
+        return nil
     }
 }

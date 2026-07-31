@@ -13,12 +13,32 @@ class MenuBarViewModel {
     var icons: [IconItem] = []
     var searchText: String = ""
     var isLoading: Bool = false
+
+    // MARK: - 全部退出（inline 二次确认 + 进度）
+
+    /// 第一次点 power：进入 inline 确认态（5s 不点则自动取消）
+    var confirmingQuitAll: Bool = false
+    /// 确认态倒计时：1.0 → 0.0（5s 归零）
+    var quitConfirmFraction: Double = 1.0
+    private var quitConfirmTask: Task<Void, Never>?
+
+    /// 进度态：forceTerminate 跑中
+    var isQuittingAll: Bool = false
+    var quitProgressDone: Int = 0
+    var quitProgressTotal: Int = 0
+
+    var quitProgressFraction: Double {
+        guard quitProgressTotal > 0 else { return 0 }
+        return Double(quitProgressDone) / Double(quitProgressTotal)
+    }
+
     var errorMessage: String?
     var showError: Bool = false
     var hoveredIconId: String?
     var hoveredHeaderId: String?
     var hoveredFooterId: String?
     var hoveredSearchClear: Bool = false
+    var pressedIconId: String?  // 按压瞬间短暂置位，iconRow 用来做 scale 反馈
     
     // MARK: - 服务依赖
     
@@ -218,28 +238,98 @@ class MenuBarViewModel {
         }
     }
 
-    /// 强制退出所有可见的非系统 app
+    /// 强制退出所有可见的非系统 app（在 MainActor 跑，forceTerminate 本身丢到后台 detached 不阻塞主线程，UI 可继续渲染进度）
     /// - Returns: 实际被终止的图标数
     @discardableResult
-    func forceQuitAll() -> Int {
+    @MainActor
+    func forceQuitAll() async -> Int {
         let targets = quitAllTargets
-        var killedCount = 0
         let ownBundleID = Bundle.main.bundleIdentifier ?? ""
+        guard !targets.isEmpty else { return 0 }
+
+        isQuittingAll = true
+        quitProgressDone = 0
+        quitProgressTotal = targets.count
+        defer {
+            isQuittingAll = false
+            quitProgressDone = 0
+            quitProgressTotal = 0
+        }
+
+        var killedCount = 0
         for icon in targets {
-            let apps = runningApps(for: icon).filter {
-                !($0.bundleIdentifier?.hasPrefix("com.apple.") ?? false) &&
-                $0.bundleIdentifier != ownBundleID
-            }
-            apps.forEach { $0.forceTerminate() }
-            if !apps.isEmpty { killedCount += 1 }
+            let bid = icon.appBundleIdentifier ?? ""
+            let killed = await Task.detached(priority: .userInitiated) {
+                let apps = NSRunningApplication
+                    .runningApplications(withBundleIdentifier: bid)
+                    .filter {
+                        !($0.bundleIdentifier?.hasPrefix("com.apple.") ?? false) &&
+                        $0.bundleIdentifier != ownBundleID
+                    }
+                apps.forEach { $0.forceTerminate() }
+                return apps.isEmpty ? 0 : 1
+            }.value
+            killedCount += killed
+            quitProgressDone += 1   // 回到 MainActor，UI 自动刷新
         }
 
-        Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            await self?.refresh()
-        }
-
+        // 等 app 真正退出再刷
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        await refresh()
         return killedCount
+    }
+
+    // MARK: - 全部退出 inline 二次确认
+
+    /// 第一次点 power 按钮：进入 inline 确认态（启动 5s 倒计时，归零自动取消）
+    @MainActor
+    func requestQuitAll() {
+        guard !confirmingQuitAll, !isQuittingAll, !quitAllTargets.isEmpty else { return }
+        confirmingQuitAll = true
+        quitConfirmFraction = 1.0
+        startQuitConfirmCountdown()
+    }
+
+    /// 确认态下点"退出"：取消倒计时 + 触发 forceQuitAll
+    @MainActor
+    func confirmQuitAll() {
+        guard confirmingQuitAll, !isQuittingAll else { return }
+        cancelQuitConfirmCountdown()
+        confirmingQuitAll = false
+        Task { await forceQuitAll() }
+    }
+
+    /// 取消确认（点"取消"或倒计时归零）
+    @MainActor
+    func cancelQuitAllConfirm() {
+        cancelQuitConfirmCountdown()
+        confirmingQuitAll = false
+        quitConfirmFraction = 1.0
+    }
+
+    @MainActor
+    private func startQuitConfirmCountdown() {
+        cancelQuitConfirmCountdown()
+        let totalTicks = 50         // 5s，每 100ms 推进一步
+        let intervalNs: UInt64 = 100_000_000
+        quitConfirmTask = Task { @MainActor [weak self] in
+            for tick in stride(from: totalTicks, through: 1, by: -1) {
+                try? await Task.sleep(nanoseconds: intervalNs)
+                if Task.isCancelled { return }
+                guard let self else { return }
+                self.quitConfirmFraction = Double(tick) / Double(totalTicks)
+            }
+            // 倒计时归零 → 自动取消
+            guard let self else { return }
+            self.confirmingQuitAll = false
+            self.quitConfirmFraction = 1.0
+        }
+    }
+
+    @MainActor
+    private func cancelQuitConfirmCountdown() {
+        quitConfirmTask?.cancel()
+        quitConfirmTask = nil
     }
 
     /// 全部退出的目标集合（用于弹窗预览）
