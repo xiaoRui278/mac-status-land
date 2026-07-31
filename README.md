@@ -179,6 +179,20 @@ MacStatusLand/
 
 ## 📝 更新日志
 
+### v2.2.1 (2026-07-31)
+- 🐛 修复"全部退出"点击后主线程黑屏：forceTerminate 改为异步 + 后台 detached 执行，主线程不再被 LaunchServices IPC 阻塞
+- 🐛 修复"全部退出"二次确认弹窗在窄 popover 中样式丑陋：改用 inline 5s 倒计时确认条 + 倒计时环，替代系统 alert
+- ✨ 全部退出期间按钮位置显示进度条（"正在退出 3/10"），用户可见进度
+- ✨ 分类 header 加 SF Symbol 图标 + 颜色 + 计数（网络/媒体/工具/系统/第三方五类）
+- ✨ 图标行按压反馈（scale 0.97 spring 动画）
+- ✨ 图标行 chevron 仅 hover 时出现，列表更安静
+- ✨ 头部加设置齿轮入口（免去右键菜单）
+- ✨ popover 加宽 300→340，app 名/分类不再截断
+- ✨ 搜索无匹配时显示专门空态（带"清空搜索"按钮）
+- ✨ 头部 logo 用 AppIcon.icns 替代 SF Symbol
+- 🧹 删 footer 重复的 refresh 按钮（header 已有）
+- 🧹 `AppIcon.icns` 复制到 `Resources/`，spm run 下 header 也能显示正确 app icon（CI release 流程源文件路径不变）
+
 ### v2.2.0 (2026-07-24)
 - ✨ 新增 **分界图标 `▮`**（借鉴 [Ice](https://github.com/jordanbaird/Ice)）：点击一键隐藏 / 恢复其左侧所有菜单栏图标，兼容刘海屏
 - ✨ 分界图标可 `⌘ Command` 拖动调整分界位置；首次启动弹出引导气泡
